@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NBA Fantasy Draft</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4efe6; --surface:#ffffff; --surface2:#f0e9dc; --line:#ddd1bc;
+    --text:#211a12; --muted:#7a6c58;
+    --accent:#e2572b; --accent-soft:#fbe2d8;
+    --mine:#2f8a57; --mine-soft:#e1f2e8;
+    --taken:#8c8272; --taken-soft:#ebe6dc;
+    --neg:#c0503a; --neg-soft:#f6ded8;
+    --font-display:'Oswald',sans-serif; --font-body:'Inter',sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#15110c; --surface:#1c1712; --surface2:#241d15;
+      --line:#372c1e; --text:#f3ede0; --muted:#a89a86;
+      --accent:#e86a3f; --accent-soft:#3a2015;
+      --mine:#49b578; --mine-soft:#173323;
+      --taken:#786d5c; --taken-soft:#2a251d;
+      --neg:#e0654a; --neg-soft:#3b1d16;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#15110c; --surface:#1c1712; --surface2:#241d15;
+    --line:#372c1e; --text:#f3ede0; --muted:#a89a86;
+    --accent:#e86a3f; --accent-soft:#3a2015;
+    --mine:#49b578; --mine-soft:#173323;
+    --taken:#786d5c; --taken-soft:#2a251d;
+    --neg:#e0654a; --neg-soft:#3b1d16;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-padding-top:calc(96px + env(safe-area-inset-top,0px));}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:var(--font-body);
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));
+    -webkit-tap-highlight-color:transparent;
+  }
+  a{color:inherit;}
+  .wrap{max-width:640px;margin:0 auto;padding:0 14px;}
+  @media (min-width:900px){
+    .wrap{max-width:1400px; display:flex; gap:16px; align-items:flex-start; padding:0 20px;}
+    .side-col{display:contents;}
+    .side-col > details{flex:1 1 0; min-width:0; margin:0; position:sticky; top:14px; max-height:calc(100vh - 28px); overflow-y:auto;}
+    .main-col{flex:3 1 0; min-width:0;}
+    .heatwrap{max-width:100%;}
+    header.top .titlebar, header.top .pickctl, header.top .onclock, header.top .lockline, header.top .slots, header.top .newsline{
+      max-width:1400px; margin-left:auto; margin-right:auto; padding-left:6px; padding-right:6px;
+    }
+  }
+
+  header.top{
+    position:sticky; top:0; z-index:20;
+    background:var(--bg);
+    padding-top:calc(10px + env(safe-area-inset-top,0px));
+    border-bottom:1px solid var(--line);
+  }
+  .titlebar{display:flex;align-items:baseline;justify-content:space-between;padding:0 14px;}
+  .titlebar h1{
+    font-family:var(--font-display); font-weight:700; letter-spacing:.02em;
+    font-size:19px; margin:0;
+  }
+  .titlebar .reset-btn{
+    font-family:var(--font-body); font-size:12px; color:var(--muted);
+    background:none;border:1px solid var(--line);border-radius:20px;
+    padding:5px 10px; cursor:pointer;
+  }
+  .pickctl{
+    display:flex; align-items:center; gap:10px; padding:10px 14px 8px;
+  }
+  .pickctl button{
+    width:38px;height:38px;border-radius:10px;border:1px solid var(--line);
+    background:var(--surface); color:var(--text); font-size:18px; font-family:var(--font-display);
+    cursor:pointer;
+  }
+  .pickctl .picklabel{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+  .pickctl .picknum{
+    font-family:var(--font-display); font-size:30px; font-weight:700; min-width:52px; text-align:center;
+  }
+  .banner{
+    margin:0 14px 10px; padding:10px 12px; border-radius:10px;
+    background:var(--accent); color:#fff; font-family:var(--font-display);
+    font-weight:600; font-size:15px; display:none; letter-spacing:.01em;
+  }
+  .banner.show{display:block;}
+  .slots{display:flex; gap:6px; overflow-x:auto; padding:0 14px 12px; scrollbar-width:none;}
+  .slots::-webkit-scrollbar{display:none;}
+  .slotchip{
+    flex:0 0 auto; font-family:var(--font-display); font-size:13px; font-weight:600;
+    border:1px solid var(--line); border-radius:8px; padding:5px 9px; color:var(--muted);
+    background:var(--surface); cursor:pointer;
+  }
+  .slotchip.done{opacity:.4; text-decoration:line-through;}
+  .slotchip.now{background:var(--accent); color:#fff; border-color:var(--accent);}
+
+  .newsline{margin:0 14px 10px;}
+  .newsline summary{cursor:pointer; font-size:11px; font-weight:600; color:var(--muted); font-family:var(--font-display);}
+  .note-toggle{margin-top:8px;}
+  .note-toggle summary{cursor:pointer; font-size:11px; font-weight:600; color:var(--muted); font-family:var(--font-display);}
+  .small-note{font-size:9.5px; color:var(--muted); line-height:1.5; margin-top:6px;}
+  .onclock{margin:0 14px 8px; font-size:12.5px; color:var(--muted);}
+  .headerctl{display:flex; flex-direction:column; align-items:flex-end; gap:3px;}
+  .updatedline{font-size:9.5px; color:var(--muted); text-align:right;}
+  .lockline{margin:0 14px 8px; font-size:11.5px; color:var(--accent); font-weight:600; display:none;}
+  .lockline.show{display:block;}
+  .locked-tag{font-family:var(--font-display); font-size:12px; font-weight:600; color:var(--muted); background:var(--surface2); padding:5px 10px; border-radius:7px;}
+  .onclock b{color:var(--text); cursor:pointer; text-decoration:underline dotted;}
+
+  .teamrow{border-bottom:1px solid var(--line); padding:9px 0;}
+  .teamrow:last-child{border-bottom:none;}
+  .teamrow .th{display:flex; justify-content:space-between; align-items:baseline;}
+  .teamrow .tname{font-family:var(--font-display); font-weight:600; font-size:13.5px; cursor:pointer; text-decoration:underline dotted;}
+  .teamrow.you .tname{color:var(--mine);}
+  .teamrow .tcount{font-size:11.5px; color:var(--muted);}
+  .teamrow .tsummary{font-size:12px; color:var(--muted); margin-top:3px; line-height:1.45;}
+  .teamrow .troster{font-size:12px; color:var(--muted); margin-top:5px; line-height:1.6; display:none;}
+  .teamrow .troster.open{display:block;}
+  .teamrow .troster span{color:var(--text);}
+
+  .standrow{display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--line);}
+  .standrow:last-child{border-bottom:none;}
+  .standrow .catlabel{width:24px; flex:0 0 24px; font-family:var(--font-display); font-weight:600; font-size:11px; color:var(--muted);}
+  .standrow .rankbadge{
+    font-family:var(--font-display); font-weight:700; font-size:13px; border-radius:6px;
+    padding:3px 6px; flex:0 0 auto; white-space:nowrap; text-align:center;
+  }
+  .standrow .rankbadge.top{background:var(--mine-soft); color:var(--mine);}
+  .standrow .rankbadge.mid{background:var(--surface2); color:var(--muted);}
+  .standrow .rankbadge.bot{background:var(--neg-soft, var(--surface2)); color:var(--neg);}
+  .standrow .rankdetail{font-size:8.5px; color:var(--muted); flex:0 0 58%; max-width:58%; line-height:1.4;}
+
+  .myteam{margin:12px 14px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface); overflow:hidden;}
+  .myteam summary{
+    list-style:none; cursor:pointer; padding:11px 13px; display:flex;
+    justify-content:space-between; align-items:center; font-family:var(--font-display);
+    font-weight:600; font-size:14px;
+  }
+  .myteam summary::-webkit-details-marker{display:none;}
+  .myteam summary .count{color:var(--mine); font-family:var(--font-body); font-weight:600; font-size:13px;}
+  .myteam .list{padding:0 13px 12px; font-size:13px; color:var(--muted); line-height:1.7;}
+  .myteam .list span{color:var(--text);}
+  .myteam .empty{padding:0 13px 12px; font-size:13px; color:var(--muted);}
+
+  .balance{padding:2px 13px 14px; border-top:1px solid var(--line);}
+  .balance h3{font-family:var(--font-display); font-size:13px; font-weight:600; margin:10px 0 8px; letter-spacing:.03em;}
+  .balance .catrow{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+  .balance .catlabel{width:32px;flex:0 0 32px;color:var(--muted);font-weight:600;font-family:var(--font-display);font-size:12px;}
+  .balance .bartrack{flex:1;height:10px;background:var(--surface2);border-radius:5px;position:relative;overflow:hidden;}
+  .balance .midline{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line);}
+  .balance .barfill{position:absolute;top:0;bottom:0;border-radius:5px;}
+  .balance .barfill.pos{background:var(--mine);left:50%;}
+  .balance .barfill.neg{background:var(--neg);right:50%;}
+  .balance .callout{font-size:12.5px;color:var(--text);margin-top:8px;line-height:1.5;}
+  .balance .modelnote{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5;}
+
+  .controls{padding:12px 14px 4px; display:flex; gap:8px;}
+  .search{
+    flex:1; padding:9px 12px; border-radius:10px; border:1px solid var(--line);
+    background:var(--surface); color:var(--text); font-size:14px; font-family:var(--font-body);
+  }
+  .search::placeholder{color:var(--muted);}
+  .toggle{display:flex; border:1px solid var(--line); border-radius:10px; overflow:hidden;}
+  .toggle button{
+    border:none; background:var(--surface); color:var(--muted); font-family:var(--font-body);
+    font-size:13px; font-weight:600; padding:0 12px; cursor:pointer;
+  }
+  .toggle button.active{background:var(--accent); color:#fff;}
+
+  .posfilter{display:flex; gap:6px; overflow-x:auto; padding:8px 14px 2px; scrollbar-width:none;}
+  .posfilter::-webkit-scrollbar{display:none;}
+  .posfilter button{
+    flex:0 0 auto; font-family:var(--font-display); font-size:12.5px; font-weight:600;
+    border:1px solid var(--line); border-radius:8px; padding:5px 10px; color:var(--muted);
+    background:var(--surface); cursor:pointer;
+  }
+  .posfilter button.active{background:var(--text); color:var(--bg); border-color:var(--text);}
+
+  .round-head{
+    margin:18px 14px 6px; font-family:var(--font-display); font-weight:600;
+    font-size:13px; letter-spacing:.08em; color:var(--muted); text-transform:uppercase;
+    border-bottom:1px solid var(--line); padding-bottom:5px;
+  }
+
+  .row{
+    margin:0 14px; padding:10px 0; border-bottom:1px solid var(--line);
+    display:flex; gap:10px; align-items:flex-start;
+  }
+  .rank{
+    flex:0 0 30px; height:30px; border-radius:50%; border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-display); font-size:13px; font-weight:600; color:var(--muted);
+    margin-top:2px;
+  }
+  .rank.good{border-color:var(--mine); color:var(--mine);}
+  .rank.bad{border-color:var(--neg); color:var(--neg);}
+  .modelbadge{
+    flex:0 0 30px; margin-top:4px; text-align:center; font-family:var(--font-display);
+    font-size:9.5px; font-weight:700; color:var(--muted); line-height:1.2;
+  }
+  .modelbadge .num{display:block; font-size:11px;}
+  .modelbadge.better .num{color:var(--mine);}
+  .modelbadge.worse .num{color:var(--neg);}
+  .info{flex:1; min-width:0;}
+  .namerow{display:flex; align-items:baseline; gap:6px; flex-wrap:wrap;}
+  .name{font-family:var(--font-body); font-weight:700; font-size:14.5px;}
+  .team{font-size:12px; color:var(--muted); font-weight:600;}
+  .stat{font-size:12.5px; color:var(--muted); margin-top:2px;}
+  .srcline{font-size:10.5px; color:var(--accent); font-weight:600; margin-top:2px; letter-spacing:.01em;}
+  .note{font-size:12.5px; color:var(--text); opacity:.85; margin-top:3px; line-height:1.4;}
+  .tagrow{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+  .risk{font-size:11px;font-weight:600;margin-top:4px;}
+  .rolebadge{font-size:10.5px;font-weight:700;margin-top:4px;padding:1px 7px;border-radius:5px;background:var(--surface2);color:var(--muted);}
+  .rolebadge.good{background:var(--mine-soft);color:var(--mine);}
+  .rolebadge.bad{background:var(--neg-soft);color:var(--neg);}
+  .risk.mid{color:var(--accent);}
+  .risk.high{color:var(--neg);}
+  .rowbtns{display:flex; gap:6px; margin-top:7px;}
+  .rowbtns button{
+    font-family:var(--font-body); font-size:12px; font-weight:600; padding:5px 10px;
+    border-radius:7px; border:1px solid var(--line); background:var(--surface); color:var(--text);
+    cursor:pointer;
+  }
+  .rowbtns button.mine-btn{border-color:var(--mine); color:var(--mine);}
+  .rowbtns button.taken-btn{border-color:var(--taken); color:var(--taken);}
+  .tag{
+    font-family:var(--font-display); font-size:11px; font-weight:600; letter-spacing:.04em;
+    padding:3px 8px; border-radius:6px; text-transform:uppercase;
+  }
+  .tag.mine{background:var(--mine-soft); color:var(--mine);}
+  .tag.taken{background:var(--taken-soft); color:var(--taken);}
+  .undo{background:none;border:none;color:var(--muted);font-size:11px;text-decoration:underline;cursor:pointer;padding:0;margin-left:6px;}
+
+  .row.is-taken{opacity:.42;}
+  .row.is-mine{background:var(--mine-soft); margin:0 -14px; padding:10px 14px; border-bottom:1px solid var(--line);}
+  .row.hidden{display:none;}
+
+  .footnote{margin:20px 14px 0; font-size:12px; color:var(--muted); line-height:1.6;}
+
+  .tabs{display:flex;gap:6px;padding:12px 14px 0;overflow-x:auto;scrollbar-width:none;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tabs button{flex:0 0 auto;padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-family:var(--font-display);font-weight:600;font-size:13px;letter-spacing:.02em;cursor:pointer;white-space:nowrap;}
+  .tabs button.active{background:var(--text);color:var(--bg);border-color:var(--text);}
+  .gpline{font-size:10.5px;color:var(--muted);margin-top:4px;}
+  .strip{display:grid;grid-template-columns:repeat(9,1fr);gap:2px;margin-top:3px;}
+  .cell{text-align:center;border-radius:5px;padding:2px 0 3px;background:var(--surface2);}
+  .cell .cl{display:block;font-size:8.5px;color:var(--muted);font-weight:600;font-family:var(--font-display);letter-spacing:.02em;}
+  .cell .cv{display:block;font-size:11px;font-weight:700;}
+  .cell.good{background:var(--mine-soft);}
+  .cell.good .cv{color:var(--mine);}
+  .cell.bad{background:var(--neg-soft);}
+  .cell.bad .cv{color:var(--neg);}
+  .chips{margin-top:5px;display:flex;gap:4px;flex-wrap:wrap;}
+  .chip{font-size:11px;font-weight:700;padding:1px 6px;border-radius:5px;}
+  .chip.pos{color:var(--mine);background:var(--mine-soft);}
+  .chip.neg{color:var(--neg);background:var(--neg-soft);}
+  .fitnote{margin:14px 14px 4px;font-size:12.5px;color:var(--muted);line-height:1.5;}
+
+  .scarcity{padding:4px 14px 12px;}
+  .scrow{display:flex;align-items:center;gap:8px;padding:5px 0;}
+  .scrow .catlabel{width:34px;flex:0 0 34px;font-family:var(--font-display);font-weight:600;font-size:12px;color:var(--muted);}
+  .sctrack{flex:1;height:12px;background:var(--surface2);border-radius:6px;overflow:hidden;}
+  .scfill{height:100%;border-radius:6px;}
+  .scpct{width:38px;text-align:right;font-size:11.5px;font-weight:700;color:var(--muted);}
+
+  .heatwrap{overflow-x:auto; margin:4px 14px 20px; border:1px solid var(--line); border-radius:10px;}
+  .heattable{border-collapse:collapse; font-size:11.5px; white-space:nowrap;}
+  .heattable th,.heattable td{padding:6px 8px; text-align:center; border-bottom:1px solid var(--line);}
+  .heattable th{
+    font-family:var(--font-display); font-weight:600; font-size:10.5px; color:var(--muted);
+    cursor:pointer; position:sticky; top:0; background:var(--surface); letter-spacing:.02em;
+  }
+  .heattable th.active{color:var(--accent);}
+  .heattable td.name{text-align:left; font-weight:700; position:sticky; left:0; background:var(--bg); min-width:140px;}
+  .heattable td.rank{color:var(--muted); font-family:var(--font-display); font-weight:600;}
+  .heattable tr:nth-child(even) td.name{background:var(--surface2);}
+  .fitscore{font-size:11.5px;font-weight:700;color:var(--accent);margin-left:auto;}
+
+  .sheet{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.5);display:none;}
+  .sheet.open{display:block;}
+  .sheetbody{position:absolute;left:0;right:0;bottom:0;max-height:88%;overflow-y:auto;background:var(--bg);border-radius:16px 16px 0 0;border-top:1px solid var(--line);padding:16px 14px calc(18px + env(safe-area-inset-bottom,0px));max-width:640px;margin:0 auto;}
+  .sheetbody h2{font-family:var(--font-display);font-size:19px;margin:0 0 2px;}
+  .sheetbody .sub{font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.4;}
+  .srow{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+  .srow .catlabel{width:32px;flex:0 0 32px;color:var(--muted);font-weight:600;font-family:var(--font-display);font-size:12px;}
+  .strack{flex:1;height:11px;background:var(--surface2);border-radius:5px;position:relative;overflow:hidden;}
+  .strack .midline{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line);z-index:1;}
+  .sbar{position:absolute;}
+  .sbar.pos{left:50%;}
+  .sbar.neg{right:50%;}
+  .sbar.before{top:0;height:5px;background:var(--taken);opacity:.7;}
+  .sbar.after{top:6px;height:5px;}
+  .sbar.after.pos{background:var(--mine);}
+  .sbar.after.neg{background:var(--neg);}
+  .sdelta{width:38px;text-align:right;font-size:12px;font-weight:700;color:var(--muted);}
+  .sdelta.up{color:var(--mine);}
+  .sdelta.down{color:var(--neg);}
+  .srank{width:82px;font-size:11.5px;color:var(--muted);text-align:right;}
+  .verdict{font-size:13.5px;font-weight:600;margin:12px 0 4px;}
+  .ptable{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px;}
+  .ptable th,.ptable td{padding:4px 6px;text-align:right;border-bottom:1px solid var(--line);}
+  .ptable th:first-child,.ptable td:first-child{text-align:left;color:var(--muted);font-weight:600;}
+  .ptable th{font-size:11px;color:var(--muted);}
+  .sbtns{display:flex;gap:8px;margin-top:16px;}
+  .sbtns button{flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:700;border:1px solid var(--line);background:var(--surface);color:var(--text);cursor:pointer;}
+  .sbtns button.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="titlebar">
+    <h1>🏀 Draft Board</h1>
+    <div class="headerctl">
+      <div style="display:flex;gap:6px;">
+        <button class="reset-btn" id="refreshBtn" onclick="copyRefreshPrompt()">🔄 Refresh</button>
+        <button class="reset-btn" onclick="archiveCurrentDraft()">💾 Save draft</button>
+        <button class="reset-btn" id="lockBtn" onclick="toggleLock()">🔒 Locked</button>
+        <button class="reset-btn" onclick="resetAll()">Reset</button>
+      </div>
+      <div class="updatedline">Updated Oct 3, 2026</div>
+    </div>
+  </div>
+  <div class="lockline" id="lockLine"></div>
+  <div class="pickctl">
+    <button onclick="movePick(-1)">−</button>
+    <div style="text-align:center;">
+      <div class="picklabel">Overall pick</div>
+      <div class="picknum" id="pickNum">1</div>
+    </div>
+    <button onclick="movePick(1)">+</button>
+  </div>
+  <div class="banner" id="yourBanner">YOUR PICK — take someone now</div>
+  <div class="onclock" id="onClockLine"></div>
+  <div class="slots" id="slotRow"></div>
+  <details class="newsline"><summary>Injury status sourcing</summary><div class="small-note">Follows Yahoo Sports' NBA injury report and player pages, checked Sept 28, 2026. Anything not yet on Yahoo is labeled. ⚠ tags flag real availability risk.</div></details>
+</header>
+
+<div class="wrap">
+  <div class="side-col">
+  <details class="myteam" id="myteamBox" open>
+    <summary><span>My Team</span><span class="count" id="myteamCount">0 / 13</span></summary>
+    <div class="list" id="myteamList"></div>
+    <div class="balance">
+      <h3>Category Balance</h3>
+      <div id="balanceBars"></div>
+      <div class="callout" id="balanceCallout"></div>
+      <details class="note-toggle"><summary>Model layers (tap for details)</summary><div class="small-note"><b>Layer 1 — Base Stats:</b> 2025-26 per-game lines, Basketball-Reference, unadjusted. <b>Layer 2 — Situational Adjustment:</b> per-category nudges (not one flat multiplier) from verified trades/role changes — cross-checked against ESPN's team transaction logs and the depth chart, not just my own read of the roster. Catches things like usage shifting after a teammate leaves, or a season suppressed by injury, plus specific return-date modeling for players with a reported recovery target. <b>Availability Discount</b> (parallel, not sequential): the A–E tier scaling every player's contribution by expected games played. <b>Layer 3 — Schedule Simulation:</b> considered, not built — back-to-back/rest effects fold into the Availability tier instead, and weekly-matchup scheduling is a different, in-season tool, not a draft-prep one. <b>Layer 4 — Monte Carlo:</b> built — tap Impact on any player for a simulated P10–P90 range, sampling games-missed and per-category variance. FG%/FT% are weighted by attempts; turnovers count against you. This is a directional model, not exact math.</div></details>
+    </div>
+  </details>
+
+  <details class="myteam" id="leagueBox" open>
+    <summary><span>League — all 12 teams</span><span class="count" id="leagueCount">0 / 156 picks</span></summary>
+    <div id="leagueList" style="padding:0 13px 12px;"></div>
+  </details>
+
+  <details class="myteam" id="standingsBox" open>
+    <summary><span>Standings by category</span><span class="count">where you rank</span></summary>
+    <div id="standingsList" style="padding:0 13px 14px;"></div>
+    <details class="note-toggle" style="padding:0 13px 12px;"><summary>How this works</summary><div class="small-note">Ranks every team 1–12 per category using the same model as Category Balance above. Fills in as picks are logged — most useful once each team has 6+ picks.</div></details>
+  </details>
+  </div>
+
+  <div class="main-col">
+  <div class="tabs">
+    <button id="tabBoard" class="active" onclick="setTab('board')">Board</button>
+    <button id="tabFit" onclick="setTab('fit')">Best fit</button>
+    <button id="tabSleepers" onclick="setTab('sleepers')">Sleepers</button>
+    <button id="tabHeat" onclick="setTab('heat')">Heat Map</button>
+  </div>
+
+  <div class="controls">
+    <input class="search" id="search" placeholder="Search player or team…" oninput="render()">
+    <div class="toggle" id="viewToggle">
+      <button id="btnAvail" class="active" onclick="setView('avail')">Available</button>
+      <button id="btnAll" onclick="setView('all')">All</button>
+    </div>
+  </div>
+  <div class="posfilter" id="posFilter"></div>
+
+  <div id="list"></div>
+
+  <div class="footnote">Board order reflects a late-Sept 2026 consensus (Yahoo ADP, RotoWire, ESPN). Positions are Yahoo Fantasy eligibility, transcribed from your app (screenshots and manual confirmations), for all 151 players. Injury statuses follow Yahoo Sports. Stats are 2025-26 per-game lines from Basketball-Reference (combined-team line for players traded midseason). Projections are my own estimates: last season times a role adjustment explained per player, weighted by an availability tier. Best fit ignores positions. Six 2026-draft-class rookies (Boozer, Dybantsa, Wilson, Peterson, Acuff, Lendeborg) are slotted in by their Yahoo ADP (RotoWire, Sept 25) since they have no NBA stat line yet — their projections are my own estimate off college/Summer League numbers. Board rank now blends three sources evenly, shown on each row: Yahoo and ESPN ADP (FantasyPros consensus, re-pulled live Oct 3) and a "RotoWire ~" figure carried over from this board's original build (RotoWire's strategy coverage plus ESPN and community rankings) — not a freshly re-fetched RotoWire number, since their live ADP tool is subscriber-gated. 5 of 157 players (Grayson Allen, Bilal Coulibaly, Tre Jones, Moses Moody, Herbert Jones) had no Yahoo/ESPN match in the data I could reach, so their rank is that RotoWire-based figure alone. Picks 158+ aren't covered.</div>
+  </div>
+</div>
+
+<div class="sheet" id="sheet" onclick="closeSheet(event)"><div class="sheetbody" id="sheetBody"></div></div>
+
+<script>
+const NUM_TEAMS = 12;
+const MY_TEAM = 5;
+const TOTAL_PICKS = 156;
+const CAT_NAMES = ['PTS','REB','AST','STL','BLK','3PM','FG%','FT%','TO'];
+const AV_MULT = {A:1.0,B:0.9,C:0.75,D:0.6,E:0.45};
+
+function teamOnClock(pick){
+  const round = Math.ceil(pick / NUM_TEAMS);
+  const posInRound = ((pick - 1) % NUM_TEAMS) + 1;
+  return (round % 2 === 1) ? posInRound : (NUM_TEAMS + 1 - posInRound);
+}
+const MY_PICKS = [];
+for(let p=1; p<=TOTAL_PICKS; p++){ if(teamOnClock(p)===MY_TEAM) MY_PICKS.push(p); }
+
+// imp = [PTS,REB,AST,STL,BLK,3PM,FG%,FT%,TO] each on a -2..+2 impact scale (my own rating, see modelnote)
+// av  = availability tier: A=~78-82 proj games, B=~65-77, C=~50-64, D=~35-49, E=<35 or no current-season sample
+const players = [
+{r:1,n:"Nikola Jokić",t:"DEN",p:"C",s:"27.7/12.9/10.7 · 56.9% FG",note:"No holes: elite scoring, boards, dimes, FG%. Safest #1.",imp:[2,2,2,1,0,0,2,1,-1],av:"B",src:{rw:1,y:2,e:1},depthRole:"Starter"},
+{r:2,n:"Victor Wembanyama",t:"SAS",p:"C",s:"25/11.5 REB/3.1 BLK",note:"Best block total in fantasy, plus boards+3s. The Feb 2025 shoulder blood clot is well behind him — he already played a full, healthy 64-game 2025-26 season after it.",imp:[1,2,0,0,2,1,1,0,0],av:"B",src:{rw:2,y:1,e:3},depthRole:"Starter"},
+{r:3,n:"Shai Gilgeous-Alexander",t:"OKC",p:"PG",s:"31.1 PTS · 55.3% FG · 87.9% FT",note:"Cleanest guard anchor: scoring + efficiency + low TO.",imp:[2,0,1,1,0,0,2,2,1],av:"A",src:{rw:3,y:4,e:2},depthRole:"Starter"},
+{r:4,n:"Luka Dončić",t:"LAL",p:"PG,SG",s:"33.4/4.0 3PM/7.7 REB/8.2 AST",note:"Full category foundation in one pick. ~4.0 TO/g is the cost.",imp:[2,1,2,0,0,1,-1,1,-2],av:"B",src:{rw:4,y:3,e:4},depthRole:"Starter"},
+{r:5,n:"Giannis Antetokounmpo",t:"MIA",p:"PF,C",s:"27.6/9.8 REB/62.4% FG",note:"1st-round only in a punt-FT% build — 65% FT hurts everywhere else. Yahoo lists day-to-day (knee).",imp:[2,2,0,0,0,-2,2,-2,0],av:"C",src:{rw:8,y:9,e:5},depthRole:"Starter"},
+{r:6,n:"Cade Cunningham",t:"DET",p:"PG,SG",s:"~24 PTS/9.9 AST/5.5 REB",note:"Assist king for a guard. 3.7 TO is a real drag on a balanced build.",imp:[1,0,2,0,-1,0,-1,0,-2],av:"A",src:{rw:10,y:5,e:7},depthRole:"Starter"},
+{r:7,n:"Anthony Edwards",t:"MIN",p:"PG,SG",s:"28.8/3.4 3PM/5.0 REB",note:"Scoring+3s locked in; AST and FT% are just okay. LaMelo's arrival likely trims his assist load as primary ball-handling duties get shared.",imp:[2,0,-2,0,0,1,0,1,0],av:"B",src:{rw:6,y:13,e:6},depthRole:"Starter"},
+{r:8,n:"Tyrese Maxey",t:"PHI",p:"PG",s:"28.3/3.1 3PM/6.6 AST/1.9 STL",note:"Elite steals+scoring guard; LeBron/Brown arrivals trim usage some.",imp:[2,-1,1,2,-1,1,0,1,0],av:"B",src:{rw:9,y:7,e:13},depthRole:"Starter"},
+{r:9,n:"Jayson Tatum",t:"BOS",p:"SF,PF",s:"10 REB/2.9 3PM (16-gm return)",note:"Achilles-return sample is tiny; well-rounded if fully healthy. Yahoo lists day-to-day (knee). Multiple Sept sources (27th, 19th) confirm he's back as Boston's clear usage engine with Brown gone; Bleacher Report (Sept 28) hedges that leaning on him solo is a real risk if the Achilles recovery wobbles.",imp:[2,1,2,0,0,1,0,1,0],av:"D",src:{rw:13,y:8,e:8},depthRole:"Starter"},
+{r:10,n:"Karl-Anthony Towns",t:"NYK",p:"PF,C",s:"11.9 REB/85.8% FT",note:"Easy big to pair with guards — free throws don't hurt you. Only 0.5 BLK.",imp:[1,2,0,-1,-2,0,0,2,0],av:"B",src:{rw:17,y:11,e:11},depthRole:"Starter"},
+{r:11,n:"Donovan Mitchell",t:"CLE",p:"PG,SG",s:"27.9/3.2 3PM/1.5 STL/86.5% FT",note:"Scarce guard stats without the FG% hit. Weak REB/BLK.",imp:[2,-1,0,1,-1,1,0,2,0],av:"B",src:{rw:5,y:19,e:21},depthRole:"Starter"},
+{r:12,n:"Cooper Flagg",t:"DAL",p:"SG,SF,PF",s:"21/6.7 REB/4.5 AST/1.2 STL/0.9 BLK",note:"Well-rounded rookie floor; sophomore leap expected.",imp:[1,1,1,1,0,-1,0,0,0],av:"B",src:{rw:16,y:6,e:23},depthRole:"Starter"},
+{r:13,n:"Scottie Barnes",t:"TOR",p:"SF,PF,C",s:"7.5 REB/5.9 AST/1.4 STL/1.4 BLK",note:"80 games, helps everywhere. Kawhi's arrival may trim his scoring.",imp:[0,1,1,1,1,-1,0,0,0],av:"A",src:{rw:15,y:10,e:25},depthRole:"Starter"},
+{r:14,n:"Kevin Durant",t:"HOU",p:"SG,SF,PF",s:"26/52% FG/87.4% FT (78 gms)",note:"Clean volume scoring at good efficiency. Low STL (0.8), age risk. Yahoo lists day-to-day (ankle). Correction: he's been in Houston since June 2025, not a fresh arrival — already played a full 78-game season there. Only real change for 2026-27 is turning 38; efficiency should hold, volume trimmed slightly.",imp:[0,-1,0,-1,-1,0,2,2,0],av:"B",src:{rw:18,y:12,e:24},depthRole:"Starter"},
+{r:15,n:"Jamal Murray",t:"DEN",p:"PG",s:"25.4/3.3 3PM/7.1 AST",note:"Full-volume breakout year; DeRozan's arrival is a slight usage risk.",imp:[1,0,1,0,0,1,0,1,1],av:"B",src:{rw:7,y:16,e:33},depthRole:"Starter"},
+{r:16,n:"Jalen Johnson",t:"ATL",p:"SF,PF",s:"22.5/10.3 REB/7.9 AST",note:"Rare reb+ast combo from a forward. FT% and TO are just ordinary. McCollum's arrival in Atlanta likely trims his scoring/playmaking load slightly.",imp:[0,1,0,0,-1,0,0,0,-1],av:"B",src:{rw:11,y:14,e:32},depthRole:"Starter"},
+{r:17,n:"Stephen Curry",t:"GSW",p:"PG",s:"4.4 3PM, elite FT (43 gms)",note:"Huge 3s+FT ceiling; durability is the real question mark. With Butler out for the season and Moody out most of it, real touches open up.",imp:[2,-1,1,0,-2,2,0,2,0],av:"D",src:{rw:19,y:23,e:18},depthRole:"Starter"},
+{r:18,n:"Amen Thompson",t:"HOU",p:"PG,SG",s:"7.8 REB/53.4% FG/1.5 STL",note:"Great reb+STL for a guard slot. Almost no 3s (0.3).",imp:[0,1,0,1,0,-2,1,-1,0],av:"B",src:{rw:22,y:27,e:16},depthRole:"Starter"},
+{r:19,n:"Jalen Brunson",t:"NYK",p:"PG",s:"26/6.8 AST (74 gms)",note:"Efficient scoring+AST with controlled TO. Thin STL/REB/BLK. Yahoo lists day-to-day (wrist); reported ready for camp.",imp:[1,-1,1,-1,-1,0,0,0,0],av:"A",src:{rw:31,y:21,e:19},depthRole:"Starter"},
+{r:20,n:"Alperen Şengün",t:"HOU",p:"PF,C",s:"6.2 AST/~9 REB + STL",note:"Rare playmaking big. 69.1% FT and 3.2 TO need a plan.",imp:[0,0,1,0,-1,-1,1,-1,-1],av:"A",src:{rw:27,y:15,e:30},depthRole:"Starter"},
+{r:21,n:"Kawhi Leonard",t:"TOR",p:"SG,SF,PF",s:"27.5/1.8 STL · 50.8% FG/88.8% FT",note:"Elite efficiency when on court; new Toronto fit + age/durability risk. New team, and Barnes's own note reflects Kawhi as Toronto's clear top scoring option — durability risk is already priced into his availability tier.",imp:[2,0,0,1,-1,0,2,2,0],av:"C",src:{rw:14,y:17,e:42},depthRole:"Starter"},
+{r:22,n:"Devin Booker",t:"PHX",p:"PG,SG",s:"6.0 AST + scoring/FT",note:"Complete guard; steals are thin (0.8). Miles Bridges now in PHX.",imp:[1,-1,0,-1,-1,0,0,1,0],av:"B",src:{rw:28,y:31,e:17},depthRole:"Starter"},
+{r:23,n:"Austin Reaves",t:"LAL",p:"PG,SG,SF",s:"22.9/5.5 AST/48.7% FG",note:"Bigger role next to Luka now that LeBron's gone. 51 games last yr. Refined: scoring load rises more than playmaking, since Luka remains the primary ball-handler — this is a usage split with Luka, not a pure increase.",imp:[2,-1,1,0,-1,0,0,1,0],av:"C",src:{rw:12,y:20,e:46},depthRole:"Starter"},
+{r:24,n:"James Harden",t:"CLE",p:"PG,SG",s:"7.9 AST, elite 3s/FT",note:"Elite AST+3s+FT. 3.5 TO and a shared backcourt with Mitchell.",imp:[0,-1,2,0,-1,1,-1,2,-2],av:"B",src:{rw:26,y:40,e:12},depthRole:"Starter"},
+{r:25,n:"Chet Holmgren",t:"OKC",p:"PF,C",s:"8.9 REB/~2 BLK/55.7% FG",note:"Blocks+3s+FG% with no FT penalty. OKC depth caps minutes some.",imp:[0,1,-1,0,1,0,1,0,0],av:"C",src:{rw:23,y:18,e:38},depthRole:"Starter"},
+{r:26,n:"Bam Adebayo",t:"MIA",p:"PF,C",s:"20/10 REB · 44.2% FG",note:"Broad line but FG% dipped; Giannis pairing muddies his usage. Yahoo lists day-to-day (back). Giannis's arrival likely trims his scoring/usage; boards and FG% should hold up on easier catch looks.",imp:[0,1,0,0,-1,-1,-1,0,0],av:"B",src:{rw:25,y:34,e:26},depthRole:"Starter"},
+{r:27,n:"Josh Giddey",t:"CHI",p:"PG,SG",s:"8.3 REB/9.1 AST",note:"Elite reb+ast from a guard. 3.6 TO/76.3% FT = punt-TO fit. Yahoo lists day-to-day (ankle).",imp:[0,1,2,0,-1,-1,0,-1,-2],av:"B",src:{rw:32,y:29,e:27},depthRole:"Starter"},
+{r:28,n:"Jaylen Brown",t:"PHI",p:"SG,SF,PF",s:"28.5/6.9 REB (with BOS)",note:"Strong in a vacuum — now splits usage with Maxey and LeBron.",imp:[1,0,-1,0,-1,0,0,-1,-1],av:"B",src:{rw:42,y:33,e:14},depthRole:"Starter"},
+{r:29,n:"Domantas Sabonis",t:"SAC",p:"PF,C",s:"11.4 REB (19-gm sample)",note:"Elite reb+AST if health normalizes. 0.2 BLK, weak FT. Yahoo lists day-to-day (back).",imp:[0,2,1,0,-2,-1,0,-1,0],av:"D",src:{rw:39,y:36,e:15},depthRole:"Starter"},
+{r:30,n:"Evan Mobley",t:"CLE",p:"PF,C",s:"9 REB/1.7 BLK",note:"Reb+block+FG% anchor, but FT% fell to 60.6%.",imp:[0,1,-1,0,1,0,1,-1,0],av:"A",src:{rw:30,y:32,e:31},depthRole:"Starter"},
+{r:31,n:"Anthony Davis",t:"WAS",p:"PF,C",s:"Elite reb/blk when healthy (20 gms)",note:"Huge ceiling; missed-game risk is severe. Finger listed; Wizards GM expects a bounce-back. Traded to Washington back in Feb 2026, but as of late June still hadn't made his Wizards debut (hand injury) — this is an unproven fit question, not a fresh-arrival bump.",imp:[0,1,-1,0,1,-1,0,-1,0],av:"D",src:{rw:59,y:25,e:9},depthRole:"Starter"},
+{r:32,n:"LeBron James",t:"PHI",p:"SF,PF",s:"20.6/7.1 AST at 41",note:"Still elite AST/FG%; smaller role likely behind Maxey/Brown.",imp:[0,-1,1,-1,-1,0,0,0,-1],av:"B",src:{rw:46,y:43,e:10},depthRole:"Starter"},
+{r:33,n:"LaMelo Ball",t:"MIN",p:"PG",s:"3.8 3PM/7.1 AST",note:"3s+AST from the point. 40.7% FG is a real hole; new MIN fit. New team sharing the backcourt with Edwards — less of a lone-engine role than he had in Charlotte.",imp:[0,-1,0,0,-2,1,-1,0,-1],av:"C",src:{rw:48,y:22,e:29},depthRole:"Starter"},
+{r:34,n:"Trae Young",t:"WAS",p:"PG",s:"8.0 AST even in an injury-hit yr",note:"Elite AST ceiling; FG%, TO and health are the risks. Yahoo lists day-to-day (quad).",imp:[0,-1,2,0,-2,0,-1,0,-1],av:"C",src:{rw:55,y:26,e:20},depthRole:"Starter"},
+{r:35,n:"Tyrese Haliburton",t:"IND",p:"PG,SG",s:"'24-25: 18.6/9.2 AST (missed '25-26)",note:"Trending toward Opening Night per recent reporting; AST+3s without hurting TO if the ramp-back holds. Yahoo lists day-to-day (Achilles).",imp:[0,-1,2,0,-1,1,0,1,1],av:"C",src:{rw:21,y:24,e:65},depthRole:"Starter"},
+{r:36,n:"Jalen Duren",t:"DET",p:"C",s:"19.5 PTS · 65.0% FG",note:"Reb+FG% with real scoring. Zero threes, 74.7% FT.",imp:[0,1,-1,-1,-1,-2,1,-2,0],av:"A",src:{rw:35,y:30,e:54},depthRole:"Starter"},
+{r:37,n:"Trey Murphy III",t:"NOP",p:"SG,SF",s:"3.2 3PM/1.5 STL/21.5 PTS",note:"Rare 3s+steals combo, and cheaper than this rank on most boards. McCollum's departure (now ATL) opens scoring touches, tempered by Mathurin now also on the roster competing for wing shots.",imp:[1,-1,-1,1,-1,2,0,1,0],av:"A",src:{rw:24,y:37,e:61},depthRole:"Starter"},
+{r:38,n:"Derrick White",t:"BOS",p:"PG,SG",s:"2.7 3PM/5.4 AST/1.3 BLK",note:"Rare guard blocks. 39.5% FG is the real cost.",imp:[0,-1,0,0,1,1,-1,0,0],av:"A",src:{rw:29,y:47,e:47},depthRole:"Starter"},
+{r:39,n:"Jalen Williams",t:"OKC",p:"SF,PF",s:"5.5 AST/48.4% FG (33 gms)",note:"Broad line if healthy — small recent sample after injury. Yahoo lists day-to-day (hamstring).",imp:[0,-1,0,0,-1,-1,0,0,0],av:"D",src:{rw:50,y:45,e:28},depthRole:"Starter"},
+{r:40,n:"Paolo Banchero",t:"ORL",p:"PF",s:"8.4 REB/5.2 AST",note:"Big all-around forward; ordinary shooting, 3.1 TO.",imp:[1,0,0,-1,-1,-1,-1,-1,-1],av:"A",src:{rw:51,y:38,e:34},depthRole:"Starter"},
+{r:41,n:"Deni Avdija",t:"POR",p:"SG,SF,PF",s:"23.8/6.8 REB/6.6 AST",note:"Breakout line; Morant+Lillard arrivals could cut into usage. Portland added both Morant AND Lillard this summer, and the backcourt/wing mix (Holiday, Henderson too) is a genuine logjam, not just a one-man hit.",imp:[0,0,0,-1,-1,0,0,0,-1],av:"B",src:{rw:44,y:35,e:52},depthRole:"Starter"},
+{r:42,n:"Desmond Bane",t:"ORL",p:"SG,SF",s:"20.1 PTS/90.8% FT (82 gms)",note:"Iron-man efficiency; no single monster category.",imp:[0,-1,-1,-1,-1,0,0,2,0],av:"A",src:{rw:38,y:55,e:41},depthRole:"Starter"},
+{r:43,n:"Lauri Markkanen",t:"UTA",p:"SF,PF",s:"26.6 PTS/89.6% FT (42 gms)",note:"Efficient big scorer; JJJ's arrival + missed-game risk.",imp:[1,0,-1,-1,-1,1,0,2,1],av:"D",src:{rw:20,y:44,e:71},depthRole:"Starter"},
+{r:44,n:"Joel Embiid",t:"PHI",p:"C",s:"26.9 PTS (38 gms)",note:"Huge per-game ceiling — durability is the entire bet.",imp:[1,-1,-1,-1,0,-1,0,1,0],av:"E",src:{rw:47,y:49,e:45},depthRole:"Starter"},
+{r:45,n:"Pascal Siakam",t:"IND",p:"PF,C",s:"24 PTS/6.6 REB/1.1 STL",note:"Scoring+reb; 69.3% FT is the tax. Haliburton's return is a wildcard.",imp:[1,0,-1,0,-1,-1,0,-1,0],av:"A",src:{rw:71,y:48,e:22},depthRole:"Starter"},
+{r:46,n:"Walker Kessler",t:"LAL",p:"C",s:"10.8 REB/1.8 BLK (5-gm sample)",note:"New Lakers rim-runner role; tiny sample, 70% FT.",imp:[-1,1,-1,-1,1,-2,1,-1,0],av:"E",src:{rw:54,y:28,e:63},depthRole:"Starter"},
+{r:47,n:"Dyson Daniels",t:"ATL",p:"SG,SF",s:"2.0 STL/6.8 REB/5.9 AST",note:"Steals+reb+ast; almost no 3s, 61.5% FT. McCollum's arrival in Atlanta trims his modest playmaking load slightly.",imp:[-1,0,-1,2,0,-2,0,-1,0],av:"A",src:{rw:33,y:64,e:49},depthRole:"Starter"},
+{r:48,n:"Franz Wagner",t:"ORL",p:"SF,PF",s:"20.6 PTS/48.1% FG (34 gms)",note:"Balanced wing — games played is the concern. Yahoo lists day-to-day (calf).",imp:[0,-1,-1,-1,-1,0,0,0,0],av:"D",src:{rw:52,y:53,e:43},depthRole:"Starter"},
+{r:49,n:"Jaren Jackson Jr.",t:"UTA",p:"PF,C",s:"1.4 BLK (48 gms)",note:"Flexible big: blocks+3s+FT. Traded to Utah, availability watch. Yahoo lists day-to-day (knee).",imp:[0,-1,-1,0,1,0,0,1,0],av:"C",src:{rw:43,y:54,e:58},depthRole:"Starter",sleeper:1,sleeperNote:"JJJ pairs shot-blocking with 3s and free-throw shooting — cheap two-way stats if the role holds."},
+{r:50,n:"Michael Porter Jr.",t:"BKN",p:"SF,PF",s:"24.2/3.4 3PM/7.1 REB",note:"Early-round production at a discount. Only 52 games last yr. New team (traded from DEN): likely the Nets' clearest go-to scoring option on a rebuild, not a complementary 4th option anymore.",imp:[2,0,-1,-1,-1,1,0,0,0],av:"C",src:{rw:40,y:71,e:51},depthRole:"Starter"},
+{r:51,n:"Kon Knueppel",t:"CHA",p:"SG,SF",s:"3.4 3PM/18.5 PTS (81 gms, rookie)",note:"Elite rookie volume shooter, but out for preseason with a left hamstring injury (offseason workout). Regular-season status not specified. Not yet on Yahoo's injury table; the miss comes from the Hornets' own announcement. LaMelo's departure (now MIN) opens real shot volume for him too.",imp:[1,-1,-1,-1,-2,1,0,0,0],av:"C",src:{rw:53,y:39,e:74},depthRole:"Starter"},
+{r:52,n:"OG Anunoby",t:"NYK",p:"SF,PF",s:"1.6 STL/2.3 3PM",note:"Glue-guy defense+3s; low assist ceiling.",imp:[-1,-1,-2,1,0,0,0,0,0],av:"A",src:{rw:49,y:62,e:57},depthRole:"Starter"},
+{r:53,n:"Donovan Clingan",t:"POR",p:"C",s:"11.5 REB/1.7 BLK (77 gms)",note:"Durable reb/blk anchor; FT% and STL need help elsewhere.",imp:[-1,1,-1,-1,0,0,0,-1,0],av:"A",src:{rw:34,y:42,e:96},depthRole:"Starter"},
+{r:54,n:"Onyeka Okongwu",t:"ATL",p:"C",s:"15.2/7.6 REB/1.9 3PM + STL/BLK",note:"Broad center line including 3s. Not a dominant FG% anchor.",imp:[0,0,-1,0,0,0,0,0,0],av:"A",src:{rw:37,y:57,e:78},depthRole:"Starter"},
+{r:55,n:"Brandon Miller",t:"CHA",p:"SF,PF",s:"20.2/3.1 3PM",note:"Volume scoring/3s; 43.5% FG + 2.5 TO cap the ceiling.",imp:[0,-1,-1,0,-1,1,-1,0,-1],av:"A",src:{rw:41,y:51,e:93},depthRole:"Starter"},
+{r:56,n:"Alex Sarr",t:"WAS",p:"C",s:"2.0 BLK/16.3 PTS (48 gms)",note:"Cheap block source, but only a partial camp participant while recovering from fractured-foot surgery. 69.2% FT. Yahoo lists day-to-day (foot).",imp:[0,-1,-1,-1,1,-1,0,-1,0],av:"D",src:{rw:45,y:61,e:80},depthRole:"Starter"},
+{r:57,n:"Tyler Herro",t:"MIL",p:"PG,SG",s:"Elite FT% (33 gms)",note:"3s+FT ceiling; needs a durability discount. Yahoo lists day-to-day (foot).",imp:[0,-1,-1,-1,-1,1,0,2,0],av:"D",src:{rw:63,y:63,e:64},depthRole:"Starter"},
+{r:58,n:"Stephon Castle",t:"SAS",p:"PG,SG",s:"7.4 AST/5.3 REB",note:"Guard reb+ast; 3.2 TO/73.4% FT need a punt-friendly build. Correction: entering his 3rd season, not 2nd (2024 draft, ROY in 2024-25). Rookie PG Dylan Harper arriving is a mild ball-handling-reps nudge down, not a major one.",imp:[-1,0,0,-1,-1,-1,0,-1,-1],av:"A",src:{rw:72,y:56,e:62},depthRole:"Starter"},
+{r:59,n:"Zion Williamson",t:"NOP",p:"PF,C",s:"21 PTS/60% FG",note:"Elite FG% scoring; 0 threes, 71.6% FT, chronic availability issue.",imp:[0,-1,-1,-1,-1,-2,2,-1,0],av:"D",src:{rw:85,y:73,e:37},depthRole:"Starter"},
+{r:60,n:"Kyrie Irving",t:"DAL",p:"PG",s:"'24-25: 24.7/4.6 AST, elite FT",note:"Mavs president says he's close to 100% and working toward game action. Huge ceiling if the knee recovery holds; no '25-26 line.",imp:[1,-1,0,0,-1,1,1,2,0],av:"E",src:{rw:66,y:50,e:81},depthRole:"Starter",sleeper:1,sleeperNote:"At full health this is a top-20 talent — the discount is about recovery, not skill."},
+{r:61,n:"Nickeil Alexander-Walker",t:"ATL",p:"PG,SG",s:"20.8/3.2 3PM/90.2% FT",note:"Efficient scoring breakout — depends on the ATL role holding.",imp:[0,-1,-1,0,-1,1,0,2,0],av:"A",src:{rw:36,y:60,e:102},depthRole:"Starter"},
+{r:62,n:"Mikal Bridges",t:"NYK",p:"SF,PF",s:"82 gms, 49% FG, low TO",note:"Stabilizer — won't carry a category on his own.",imp:[-1,-1,-1,0,0,0,0,0,0],av:"A",src:{rw:61,y:83,e:56},depthRole:"Starter"},
+{r:63,n:"Ivica Zubac",t:"IND",p:"C",s:"10.5 REB/60% FG (48 gms)",note:"FG%+boards; under a block/game, traded to Indiana. Had a partial-season preview in Indiana after the Feb 2026 trade; this is his first full season there as the clear starting center.",imp:[0,1,-1,-1,-1,-2,2,-1,0],av:"D",src:{rw:97,y:70,e:35},depthRole:"Starter"},
+{r:64,n:"Julius Randle",t:"BKN",p:"PF",s:"21.1/6.7 REB/5.0 AST",note:"Useful all-around; weak defense stats, new role after Claxton left. Claxton's departure (now CHI) opens more paint touches.",imp:[0,1,0,-1,-1,-1,-1,-1,-1],av:"A",src:{rw:69,y:66,e:68},depthRole:"Starter"},
+{r:65,n:"De'Aaron Fox",t:"SAS",p:"PG",s:"6.2 AST/48.6% FG",note:"Good FG%+AST fit; scoring/FT modest for the name.",imp:[0,-1,0,0,-1,-1,1,0,0],av:"B",src:{rw:76,y:93,e:36},depthRole:"Starter"},
+{r:66,n:"Keyonte George",t:"UTA",p:"PG,SG",s:"23.5/6.1 AST/89.1% FT",note:"Breakout scorer+FT; 3.1 TO, crowded Utah frontcourt.",imp:[1,-1,0,0,-1,0,-1,1,-1],av:"B",src:{rw:56,y:52,e:100},depthRole:"Starter",sleeper:1,sleeperNote:"Already a 20+ point scorer with real FT touch; a legit breakout if Utah keeps expanding his role."},
+{r:67,n:"Ja Morant",t:"POR",p:"PG",s:"8.1 AST (20-gm sample)",note:"Season-ending elbow surgery in Mar. 2026; huge ceiling, traded to POR, 3.5 TO/41% FG. Yahoo lists day-to-day (elbow). Portland's backcourt is a genuine logjam (Lillard, Holiday, Henderson too) — talent floor is top-15, but expecting full healthy-Memphis-level usage immediately may be optimistic.",imp:[0,-1,1,0,-1,-1,-1,0,-2],av:"D",src:{rw:74,y:99,e:39},depthRole:"Starter",sleeper:1,sleeperNote:"Elite-talent floor; the discount is entirely about the elbow, not the ability."},
+{r:68,n:"Brandon Ingram",t:"LAC",p:"SG,SF,PF",s:"21.5 PTS, good shooting",note:"Solid scorer on the Clippers; per NBA.com (Sept 29), it's both right heel surgery and a partial Achilles tear together, with no timetable set for his debut. Thin defensive stats.",imp:[0,-1,-1,-1,-1,0,0,1,0],av:"E",src:{rw:70,y:76,e:69},depthRole:"Out"},
+{r:69,n:"Naz Reid",t:"CHA",p:"PF,C",s:"2.1 3PM + reb/blk/stl",note:"Stretch big; 45.6% FG/73.2% FT, new CHA role.",imp:[-1,0,-1,0,0,1,-1,-1,0],av:"B",src:{rw:64,y:67,e:86},depthRole:"Starter"},
+{r:70,n:"Darius Garland",t:"LAC",p:"PG",s:"6.7 AST/2.7 3PM (45 gms)",note:"Clean guard efficiency; missed-game and new-role risk. Traded to a Clippers backcourt with no established hierarchy after the Kawhi/Zubac/Harden teardown — real opportunity, but also real range of outcomes.",imp:[0,-1,1,-1,-1,0,-1,1,0],av:"D",src:{rw:92,y:58,e:73},depthRole:"Starter"},
+{r:71,n:"VJ Edgecombe",t:"PHI",p:"PG,SG",s:"1.4 STL/5.6 REB/4.2 AST (75 gms)",note:"Defense+reb without needing the ball. PHI's usage is star-heavy.",imp:[-1,0,0,1,-1,-1,0,0,0],av:"A",src:{rw:57,y:68,e:99},depthRole:"Starter",sleeper:1,sleeperNote:"Defense and rebounding at zero draft cost — a mid-round pick who should play 75+ games."},
+{r:72,n:"Rudy Gobert",t:"MIN",p:"C",s:"11.5 REB/1.6 BLK/68.2% FG",note:"Elite punt-FT% anchor. 52.6% FT ruins a balanced build.",imp:[-1,2,-1,-1,1,-2,1,-2,0],av:"B",src:{rw:78,y:80,e:70},depthRole:"Starter"},
+{r:73,n:"Jarrett Allen",t:"CLE",p:"C",s:"63.8% FG/8.5 REB",note:"Efficiency+boards; blocks have dried up, 56 games.",imp:[-1,0,-1,-1,-1,-2,2,1,0],av:"C",src:{rw:95,y:85,e:53},depthRole:"Starter"},
+{r:74,n:"Matas Buzelis",t:"CHI",p:"SF,PF",s:"2.2 3PM/1.5 BLK",note:"Rare 3s+blocks forward combo, entering his 3rd season.",imp:[-1,-1,-1,0,1,1,0,0,0],av:"A",src:{rw:60,y:59,e:115},depthRole:"Starter",sleeper:1,sleeperNote:"Flashed real 3-and-D range as a rookie; a second-year scoring leap would make him a steal."},
+{r:75,n:"Cameron Boozer",t:"MEM",p:"PF,C",s:"SL: 18.0/7.4/3.8, 49/41/76% (no NBA games yet)",note:"3rd overall pick; well-rounded rookie floor (passing, boards) in a wide-open Memphis frontcourt role.",imp:[0,1,1,1,-1,0,0,0,0],av:"B",src:{rw:58,y:65,e:114},depthRole:"Starter"},
+{r:76,n:"Damian Lillard",t:"POR",p:"PG",s:"'24-25: 24.9/7.1 AST (missed '25-26)",note:"Trending toward Opening Night per recent reporting; huge ceiling, crowded new POR backcourt. Yahoo lists day-to-day (Achilles).",imp:[0,-1,1,-1,-1,0,-1,1,0],av:"E",src:{rw:102,y:74,e:66},depthRole:"Starter",sleeper:1,sleeperNote:"Still elite production when on the floor — a recovery bet, not a skill bet."},
+{r:77,n:"Jaden McDaniels",t:"MIN",p:"SF",s:"STL+BLK/14.8 PTS/51.5% FG",note:"Defense without an empty offensive line.",imp:[-1,-1,-1,0,0,-1,0,0,0],av:"A",src:{rw:80,y:84,e:82},depthRole:"Starter"},
+{r:78,n:"Paul George",t:"BOS",p:"SF,PF",s:"1.7 STL/2.7 3PM (37 gms)",note:"Discounted vet, traded to BOS; health is the entire bet.",imp:[-1,-1,-1,1,-1,1,0,0,0],av:"D",src:{rw:77,y:88,e:85},depthRole:"Starter"},
+{r:79,n:"Ryan Rollins",t:"MIL",p:"PG,SG",s:"17.3/5.6 AST/1.5 STL (74 gms)",note:"Breakout guard; Giannis trade reshuffles the MIL hierarchy. Giannis's departure opens usage, tempered by Tyler Herro also arriving as a direct backcourt scoring competitor.",imp:[1,-1,0,1,-1,-1,0,0,0],av:"A",src:{rw:62,y:75,e:116},depthRole:"Starter"},
+{r:80,n:"AJ Dybantsa",t:"WAS",p:"SF",s:"College: 25.5/6.8/3.7/1.1 STL, 51/33/77% (no NBA games yet)",note:"No. 1 overall pick; expected focal-point scoring role next to Trae Young and Anthony Davis, but Summer League efficiency was rough.",imp:[1,0,0,0,-1,0,0,1,-1],av:"B",src:{rw:79,y:82,e:94},depthRole:"Starter"},
+{r:81,n:"Collin Gillespie",t:"PHX",p:"PG,SG",s:"2.9 3PM/4.6 AST/1.6 TO (80 gms)",note:"Low-TO 3s+AST; limited by Booker's usage.",imp:[-1,-1,0,-1,-1,0,0,0,1],av:"A",src:{rw:110,y:61,e:null},depthRole:"Bench (2nd)"},
+{r:82,n:"Payton Pritchard",t:"BOS",p:"PG",s:"2.7 3PM/5.2 AST/1.4 TO (79 gms)",note:"Clean, durable guard — no single elite category.",imp:[-1,-1,0,-1,-1,1,0,1,1],av:"A",src:{rw:87,y:81,e:89},depthRole:"Starter",sleeper:1,sleeperNote:"Basically no weaknesses and plays every night — the safest value pick this late."},
+{r:83,n:"Josh Hart",t:"NYK",p:"SG,SF",s:"7.4 REB/4.8 AST (66 gms)",note:"Quiet all-around glue guy; low FT attempts help your %.",imp:[-1,0,0,-1,-1,-1,0,0,0],av:"B",src:{rw:96,y:114,e:48},depthRole:"Starter"},
+{r:84,n:"Coby White",t:"CHA",p:"PG,SG",s:"17.4/2.3 3PM",note:"Scoring guard; 0.5 STL is the hole, new CHA role. LaMelo's departure (now MIN) opens up lead-guard usage in Charlotte.",imp:[0,-1,0,-1,-1,0,-1,0,0],av:"B",src:{rw:111,y:97,e:50},depthRole:"Starter"},
+{r:85,n:"Myles Turner",t:"MIL",p:"C",s:"1.6 BLK/2.1 3PM",note:"Stretch-5 blocks+3s; 44% FG/5.3 REB below name value. Already an established Buck (signed July 2025, not new); Giannis's departure opens center-touches cleanly, with no direct positional competitor added.",imp:[0,-1,-1,-1,0,0,-1,0,0],av:"B",src:{rw:91,y:110,e:60},depthRole:"Starter"},
+{r:86,n:"Ausar Thompson",t:"DET",p:"SG,SF,PF",s:"2.0 STL/0.9 BLK/52.5% FG",note:"Defense+FG%; almost no 3s, 57.1% FT — punt-FT/3s fit.",imp:[-1,0,-1,1,0,-2,1,-2,0],av:"A",src:{rw:68,y:100,e:98},depthRole:"Starter",sleeper:1,sleeperNote:"Rare STL+BLK combo for a guard-eligible slot, at a fraction of his ceiling's price."},
+{r:87,n:"Kel'el Ware",t:"MIL",p:"C",s:"9 REB/1.1 BLK/1.2 3PM",note:"Attractive center profile; MIL rotation unsettled post-trade.",imp:[-1,0,-1,-1,0,0,0,-1,0],av:"B",src:{rw:67,y:78,e:124},depthRole:"Bench (2nd)"},
+{r:88,n:"Miles Bridges",t:"PHX",p:"PF",s:"17.1/5.8 REB/1.9 3PM",note:"Points+boards; new PHX role behind Booker. RotoWire fade.",imp:[-1,0,-1,-1,-1,0,-1,0,-1],av:"B",src:{rw:105,y:116,e:59},depthRole:"Starter"},
+{r:89,n:"Norman Powell",t:"CHI",p:"SG,SF",s:"21.7 PTS/2.7 3PM",note:"Pure scoring/3s; thin REB/AST.",imp:[0,-1,-1,-1,-1,0,0,0,0],av:"B",src:{rw:84,y:107,e:90},depthRole:"Starter"},
+{r:90,n:"Nikola Vučević",t:"ORL",p:"C",s:"8.4 REB/1.6 3PM",note:"Reb+3s+FT combo big; ORL frontcourt minutes will be split.",imp:[-1,1,-1,-1,-1,0,0,0,0],av:"B",src:{rw:100,y:141,e:40},depthRole:"Bench (2nd)"},
+{r:91,n:"Zach Edey",t:"MEM",p:"C",s:"11.1 REB/1.9 BLK (11 gms)",note:"Massive per-game upside; MEM frontcourt crowded, tiny sample.",imp:[-1,1,-1,-1,1,-2,0,-1,0],av:"E",src:{rw:90,y:72,e:122},depthRole:"Out"},
+{r:92,n:"Aaron Nesmith",t:"IND",p:"SG,SF",s:"2.3 3PM (45 gms)",note:"3s specialist; 41.4% FG last year limits the floor.",imp:[-1,-1,-1,-1,-1,-1,-1,0,0],av:"D",src:{rw:154,y:41,e:null},depthRole:"Starter"},
+{r:93,n:"Immanuel Quickley",t:"TOR",p:"PG,SG",s:"AST+3s+STL, 1.5 TO",note:"Clean guard line; Kawhi trade muddies the TOR hierarchy.",imp:[-1,-1,1,0,-1,1,0,0,1],av:"B",src:{rw:65,y:117,e:111},depthRole:"Starter"},
+{r:94,n:"Caleb Wilson",t:"CHI",p:"PF",s:"College: 19.8/9.4/2.7/1.5 STL/1.4 BLK, 58/26/71% (no NBA games yet)",note:"4th overall pick; real stocks (STL+BLK) plus a legit 3-point stroke shown in Summer League. FT shooting is the weak spot.",imp:[0,1,-1,1,1,0,1,-1,0],av:"B",src:{rw:82,y:91,e:120},depthRole:"Starter"},
+{r:95,n:"Dejounte Murray",t:"NOP",p:"PG",s:"6.4 AST/1.6 STL (14 gms)",note:"Elite STL+AST if healthy — tiny post-Achilles sample.",imp:[0,-1,1,2,-1,0,0,0,-1],av:"E",src:{rw:98,y:69,e:126},depthRole:"Starter",sleeper:1,sleeperNote:"STL+AST combo is nearly unmatched when healthy — a pure name-recognition discount."},
+{r:96,n:"Andrew Wiggins",t:"MIA",p:"SG,SF,PF",s:"15.4/47.5% FG + 3s/STL/BLK",note:"Complementary wing; Giannis arrival changes the MIA hierarchy. Giannis's arrival pushes him clearly into a complementary role.",imp:[-2,-1,-1,0,0,0,0,0,0],av:"A",src:{rw:89,y:136,e:77},depthRole:"Starter"},
+{r:97,n:"Grayson Allen",t:"CHA",p:"SG,SF",s:"3.1 3PM/1.4 STL",note:"3s+STL; 40.3% FG, traded to Charlotte.",imp:[-1,-1,-1,0,-1,1,-1,0,0],av:"B",src:{rw:101,y:null,e:null},depthRole:"Bench (deep)"},
+{r:98,n:"Nic Claxton",t:"CHI",p:"C",s:"57.1% FG/3.7 AST/1.1 BLK",note:"Passing big with blocks; 61.6% FT, new CHI role.",imp:[-1,-1,0,-1,0,-2,1,-2,0],av:"B",src:{rw:99,y:108,e:107},depthRole:"Starter"},
+{r:99,n:"Ty Jerome",t:"MEM",p:"SG/PG",s:"2.8 3PM/5.7 AST (15 gms)",note:"Tiny-sample breakout — don't project a full season off it. Morant's departure (now POR) opens backcourt usage in Memphis.",imp:[1,-1,0,-1,-1,1,0,0,0],av:"D",src:{rw:75,y:112,e:128},depthRole:"Starter"},
+{r:100,n:"Kevin Porter Jr.",t:"MIL",p:"PG,SG",s:"7.4 AST/2+ STL (38 gms)",note:"AST+STL combo; new MIL role after the Giannis trade. Giannis's departure opens playmaking reps, tempered by Herro's arrival as a ball-handling competitor.",imp:[-1,-1,1,1,-1,-1,0,-1,-1],av:"D",src:{rw:83,y:161,e:79},depthRole:"Bench (2nd)"},
+{r:101,n:"Jimmy Butler III",t:"GSW",p:"SF/PF",s:"52% FG/86.2% FT/1.4 STL (38 gms, ACL)",note:"Efficient if healthy, but this is more serious than a recovery timeline — team depth chart has him out for the season with a torn ACL, possible return around the All-Star break.",imp:[0,-1,0,0,-1,-2,1,1,0],av:"E",src:{rw:81,y:176,e:67},depthRole:"Out"},
+{r:102,n:"Darryn Peterson",t:"UTA",p:"SG",s:"SL: 23.0/3.2/5.2/1.0 STL/1.2 BLK, 40/35/78% (no NBA games yet)",note:"2nd overall pick; real scoring talent, but a crowded Utah backcourt behind Keyonte George makes a slow start plausible.",imp:[1,-1,0,0,-1,0,-1,1,-1],av:"C",src:{rw:103,y:105,e:121},depthRole:"Starter"},
+{r:103,n:"Jabari Smith Jr.",t:"HOU",p:"PF,C",s:"2.3 3PM/6.9 REB (77 gms)",note:"Reliable 3s+reb combo forward.",imp:[-1,-1,-1,-1,0,0,0,0,0],av:"A",src:{rw:86,y:115,e:129},depthRole:"Starter"},
+{r:104,n:"DeMar DeRozan",t:"DEN",p:"SF,PF",s:"18.1 PTS/86.5% FT, low TO",note:"Efficient scorer next to Jokić; only 0.6 threes.",imp:[0,-1,-1,-1,-1,-2,0,1,1],av:"A",src:{rw:124,y:162,e:44},depthRole:"Bench (2nd)"},
+{r:105,n:"Jalen Green",t:"PHX",p:"SG,SF",s:"17.8/2.2 3PM (32 gms)",note:"Scoring/3s upside; 42.2% FG/74.7% FT, Bridges added to PHX.",imp:[-1,-1,-1,-1,-1,-1,-1,-1,0],av:"D",src:{rw:143,y:132,e:55},depthRole:"Starter"},
+{r:106,n:"CJ McCollum",t:"ATL",p:"PG,SG",s:"18.7/2.5 3PM/3.9 AST",note:"Steady scoring+3s, traded to ATL; limited STL/AST ceiling.",imp:[-1,-1,-1,-1,-1,0,0,0,0],av:"A",src:{rw:114,y:140,e:84},depthRole:"Bench (2nd)"},
+{r:107,n:"Jalen Suggs",t:"ORL",p:"PG,SG",s:"1.8 STL/5.5 AST (57 gms)",note:"Defense+playmaking; 43.5% FG limits the floor.",imp:[-1,-1,0,1,-1,-1,-1,0,0],av:"C",src:{rw:73,y:131,e:135},depthRole:"Starter"},
+{r:108,n:"Reed Sheppard",t:"HOU",p:"PG,SG",s:"2.8 3PM/1.5 STL/0.7 BLK",note:"Rare 3s+D combo guard; VanVleet's return is a minutes risk.",imp:[-1,-1,-1,1,0,0,0,0,0],av:"C",src:{rw:88,y:160,e:91},depthRole:"Bench (2nd)"},
+{r:109,n:"Kristaps Porziņģis",t:"GSW",p:"C",s:"16.7/5.2 REB/1.5 BLK/44.6% FG (32 gms)",note:"High-ceiling stretch-5, but only 32 games in '25-26; skipped Latvia's August window to prep for the season. Durability is the whole question. No Yahoo injury designation right now.",imp:[0,-1,-1,-1,1,0,-1,1,0],av:"D",src:{rw:123,y:128,e:88},depthRole:"Starter",sleeper:1,sleeperNote:"Blocks+3s+FT from a center slot if he stays on the court — a health-discount pick."},
+{r:110,n:"Derik Queen",t:"NOP",p:"PF,C",s:"7.1 REB/3.7 AST (rookie)",note:"Passing big rookie; 0.3 threes, 2.3 TO.",imp:[-1,0,0,-1,-1,-2,0,-1,-1],av:"B",src:{rw:109,y:92,e:139},depthRole:"Bench (2nd)"},
+{r:111,n:"Day'Ron Sharpe",t:"BKN",p:"C",s:"6.7 REB/60.1% FG/1.1 STL",note:"Starting gig now open after Claxton was traded — role could grow.",imp:[-1,-1,-1,0,-1,-2,1,-1,0],av:"B",src:{rw:126,y:103,e:null},depthRole:"Starter",sleeper:1,sleeperNote:"The starting job just opened up in Brooklyn — a role change alone could double his value."},
+{r:112,n:"Cedric Coward",t:"MEM",p:"SG,SF",s:"13.6 PTS/5.9 REB/84.3% FT",note:"Solid rookie base; role clarity is the open question.",imp:[-1,-1,-1,-1,-1,-1,0,1,0],av:"B",src:{rw:117,y:118,e:null},depthRole:"Starter"},
+{r:113,n:"Bilal Coulibaly",t:"WAS",p:"SG,SF",s:"1.3 STL/1.0 BLK",note:"Stocks specialist; 42.5% FG is the drag.",imp:[-1,-1,-1,0,0,-1,-1,0,0],av:"B",src:{rw:119,y:null,e:null},depthRole:"Bench (2nd)"},
+{r:114,n:"RJ Barrett",t:"TOR",p:"SG,SF,PF",s:"19.3 PTS/49.1% FG/5.3 REB",note:"Volume scorer; 71.7% FT and thin defense stats. RotoWire fade.",imp:[0,-1,-1,-1,-1,-1,0,-1,0],av:"A",src:{rw:133,y:137,e:87},depthRole:"Starter"},
+{r:115,n:"Donte DiVincenzo",t:"MIN",p:"SG/SF",s:"3.0 3PM/1.3 STL (82 gms)",note:"Durable 3s+STL when on the floor, but the team depth chart lists him as possibly out for all of 2026-27 with a torn Achilles — treat as a late-round dart, not a rotation piece to plan around.",imp:[-1,-1,-1,0,-1,0,-1,0,0],av:"E",src:{rw:93,y:null,e:146},depthRole:"Out"},
+{r:116,n:"Jay Huff",t:"IND",p:"C",s:"1.9 BLK/1.5 3PM (82 gms)",note:"Cheap blocks+3s; Zubac trade could squeeze his minutes.",imp:[-1,-1,-1,-1,0,0,0,-1,0],av:"A",src:{rw:131,y:119,e:null},depthRole:"Bench (2nd)"},
+{r:117,n:"Mark Williams",t:"PHX",p:"C",s:"64.4% FG/8 REB (60 gms)",note:"FG%+boards upside; under a block per game. Yahoo lists Injured Reserve (shoulder).",imp:[-1,-1,-1,-1,-1,-2,2,0,0],av:"E",src:{rw:155,y:122,e:103},depthRole:"Out"},
+{r:118,n:"Isaiah Hartenstein",t:"OKC",p:"C",s:"9.4 REB/3.5 AST/62.2% FG (47 gms)",note:"Passing big with good FG%; 61% FT, deep OKC roster. Yahoo lists day-to-day (ankle).",imp:[-1,-1,0,-1,-1,-2,1,-1,0],av:"D",src:{rw:151,y:120,e:112},depthRole:"Starter"},
+{r:119,n:"Zach LaVine",t:"SAC",p:"PG,SG,SF",s:"19.2/2.5 3PM (39 gms)",note:"Scoring/3s ceiling; durability risk, new SAC role. Yahoo lists day-to-day (finger).",imp:[-1,-1,-1,-1,-1,0,-1,1,0],av:"D",src:{rw:138,y:175,e:72},depthRole:"Starter"},
+{r:120,n:"Aaron Gordon",t:"DEN",p:"PF,C",s:"16.2/5.8 REB (36 gms)",note:"Good complement to Jokić; DeRozan addition + health risk. Yahoo lists day-to-day (calf).",imp:[-1,-1,-1,-1,-1,-1,0,0,0],av:"D",src:{rw:139,y:138,e:113},depthRole:"Starter"},
+{r:121,n:"Kyshawn George",t:"WAS",p:"SG,SF,PF",s:"2.1 3PM/5.1 REB/4.5 AST/~1 BLK",note:"Fills many columns; 48 games, 43.8% FG.",imp:[-1,-1,0,-1,0,0,-1,0,0],av:"D",src:{rw:112,y:143,e:145},depthRole:"Starter"},
+{r:122,n:"Darius Acuff Jr.",t:"SAC",p:"PG",s:"College: 23.5/3.1/6.4/0.8 STL/2.5 3PM, 48/44/81% (no NBA games yet)",note:"7th overall pick; clear runway at starting PG now that Westbrook's retired. Elite college efficiency, rough Summer League shooting.",imp:[1,-1,1,0,-1,0,0,1,-1],av:"B",src:{rw:115,y:134,e:152},depthRole:"Starter",sleeper:1,sleeperNote:"Rookie with a clean opportunity change (Westbrook's retirement) — priced well below his likely starting role."},
+{r:123,n:"Ayo Dosunmu",t:"MIN",p:"PG,SG",s:"51.7% FG/1.4 TO",note:"Efficient low-usage guard; crowded MIN backcourt (LaMelo added).",imp:[-1,-1,-1,-1,-1,-1,1,1,0],av:"C",src:{rw:121,y:127,e:154},depthRole:"Bench (2nd)"},
+{r:124,n:"John Collins",t:"DET",p:"PF,C",s:"55.1% FG/5.3 REB",note:"Efficient scoring, traded to DET; only 0.7 BLK.",imp:[-1,-1,-1,-1,-2,-1,1,0,0],av:"A",src:{rw:135,y:167,e:101},depthRole:"Starter"},
+{r:125,n:"Andrew Nembhard",t:"IND",p:"PG,SG",s:"7.7 AST (with Haliburton out)",note:"AST volume likely drops once Haliburton returns.",imp:[-1,-1,0,-1,-1,-1,0,0,0],av:"B",src:{rw:125,y:182,e:97},depthRole:"Starter"},
+{r:126,n:"Ajay Mitchell",t:"OKC",p:"PG,SG",s:"13.6 PTS/1.2 STL/87% FT",note:"Efficient depth guard on a stacked OKC roster. Yahoo lists day-to-day (calf).",imp:[-1,-1,-1,0,-1,-1,0,1,0],av:"B",src:{rw:128,y:144,e:null},depthRole:"Bench (2nd)"},
+{r:127,n:"Tre Jones",t:"CHI",p:"PG,SG",s:"5.4 AST/1.4 TO/55.3% FG",note:"Clean, low-TO assists; light scoring/3s.",imp:[-1,-1,0,-1,-1,-1,0,1,1],av:"B",src:{rw:136,y:null,e:null},depthRole:"Bench (2nd)"},
+{r:128,n:"Draymond Green",t:"GSW",p:"PF,C",s:"Career: 9.3/7.3/6.5/1.4 STL/1.0 BLK/0.9 3PM",note:"Late-round 9-cat staple — positive in nearly everything but scoring.",imp:[-1,0,1,1,1,-1,0,0,-1],av:"A",src:{rw:157,y:145,e:106},depthRole:"Starter",sleeper:1,sleeperNote:"A 9-cat generalist — positive in almost everything but scoring, and often goes undrafted."},
+{r:129,n:"Devin Vassell",t:"SAS",p:"SG,SF",s:"2.5 3PM, low TO",note:"Clean shooting; thin AST/STL.",imp:[-1,-1,-1,-1,-1,0,0,0,1],av:"A",src:{rw:127,y:163,e:119},depthRole:"Starter"},
+{r:130,n:"Cason Wallace",t:"OKC",p:"PG,SG,SF",s:"2.0 STL, low TO",note:"Cheap steals specialist for a stars-heavy roster.",imp:[-1,-1,-1,1,-1,0,0,0,0],av:"B",src:{rw:107,y:150,e:155},depthRole:"Starter",sleeper:1,sleeperNote:"Pure steals specialist on a stars-heavy roster — cheap category filler late."},
+{r:131,n:"Toumani Camara",t:"POR",p:"SF,PF",s:"2.6 3PM/5.1 REB (82 gms)",note:"Durable 3s+D wing; 70.7% FT.",imp:[-1,-1,-1,0,-1,0,0,-1,0],av:"A",src:{rw:108,y:172,e:132},depthRole:"Starter",sleeper:1,sleeperNote:"Plays 82 games and quietly fills 3s, boards and D — reliable floor at zero cost."},
+{r:132,n:"Keegan Murray",t:"SAC",p:"SF,PF",s:"1.5 BLK (23 gms)",note:"Rare forward shot-blocking. His first 3 NBA seasons he played 80/77/76 games — 2025-26 was an unrelated-injury pile-up (thumb, calf, ankle), not a chronic pattern, and his May 2026 ankle surgery had an expected mid-July recovery, well before camp.",imp:[-1,-1,-1,-1,0,0,0,0,0],av:"C",src:{rw:104,y:187,e:123},depthRole:"Starter"},
+{r:133,n:"Tari Eason",t:"HOU",p:"SG,SF,PF",s:"6.3 REB/1.2 STL",note:"Defense upside; 41.6% FG limits it, deep HOU rotation.",imp:[-1,-1,-1,0,-1,-1,-1,0,0],av:"B",src:{rw:134,y:null,e:142},depthRole:"Bench (2nd)"},
+{r:134,n:"Santi Aldama",t:"DAL",p:"PF",s:"14/6.7 REB/1.6 3PM",note:"Stretch-big flex, traded to DAL; limited in Saturday practice with an undisclosed knee issue. Crowded frontcourt.",imp:[-1,-1,-1,-1,-1,0,0,-1,0],av:"C",src:{rw:145,y:null,e:131},depthRole:"Bench (2nd)"},
+{r:135,n:"Neemias Queta",t:"BOS",p:"C",s:"65.3% FG/8.4 REB/1.3 BLK (76 gms)",note:"Durable center production; re-verified depth chart (Oct 3) actually lists him ahead of Mitchell Robinson, not behind — the two will likely split the job, with Robinson's own injury history (70+ games in a season only once in 8 years) working in Queta's favor. 0 threes, 70.3% FT.",imp:[-1,-1,-1,-1,-1,-2,2,-1,0],av:"B",src:{rw:144,y:124,e:147},depthRole:"Starter"},
+{r:136,n:"Jusuf Nurkić",t:"UTA",p:"C",s:"10.4 REB/4.8 AST (41 gms)",note:"Rare center playmaking; 54.9% FT, crowded UTA bigs.",imp:[-1,1,0,-1,-1,-1,0,-2,0],av:"D",src:{rw:94,y:166,e:158},depthRole:"Starter"},
+{r:137,n:"Brandin Podziemski",t:"GSW",p:"PG,SG",s:"5.1 REB/3.7 AST/1.1 STL (82 gms)",note:"Durable all-around glue guard.",imp:[-1,-1,-1,0,-1,-1,0,0,0],av:"A",src:{rw:120,y:147,e:151},depthRole:"Starter"},
+{r:138,n:"Yaxel Lendeborg",t:"GSW",p:"PF",s:"SL: 14.9/6.8/4.0/1.4 STL/0.9 BLK/2.1 3PM, 48/46/71% (no NBA games yet)",note:"11th overall pick, Summer League championship MVP; real early minutes since both Butler III and Moody are expected to miss large chunks of the season.",imp:[0,0,0,1,0,1,0,-1,0],av:"B",src:{rw:122,y:157,e:141},depthRole:"Bench (2nd)",sleeper:1,sleeperNote:"Rookie stepping into real minutes because of injuries ahead of him on the depth chart, not raw hype."},
+{r:139,n:"Wendell Carter Jr.",t:"ORL",p:"C",s:"7.4 REB/51.2% FG (78 gms)",note:"Steady boards+FG%; Vučević's return complicates minutes.",imp:[-1,-1,-1,-1,-1,-1,1,0,0],av:"A",src:{rw:146,y:135,e:null},depthRole:"Starter"},
+{r:140,n:"Bennedict Mathurin",t:"NOP",p:"SG,SF",s:"17.6 PTS/86.9% FT",note:"Scoring+FT; weak defense stats. Traded to LAC in Feb 2026, then signed with New Orleans as a free agent on Aug 26, 2026 — his current team.",imp:[-1,-1,-1,-1,-1,-1,0,1,0],av:"B",src:{rw:113,y:188,e:125},depthRole:"Bench (2nd)"},
+{r:141,n:"Jaime Jaquez Jr.",t:"MIL",p:"SG,SF,PF",s:"15.4/4.7 AST/50.7% FG",note:"Well-rounded wing, traded to MIL in the Giannis deal.",imp:[-1,-1,-1,-1,-1,-1,0,0,0],av:"B",src:{rw:142,y:123,e:161},depthRole:"Starter"},
+{r:142,n:"Kelly Oubre Jr.",t:"IND",p:"SF,PF",s:"1.4 STL/14.1 PTS",note:"Steals+scoring wing, new IND role; thin AST.",imp:[-1,-1,-1,0,-1,-1,-1,0,0],av:"C",src:{rw:140,y:139,e:150},depthRole:"Bench (2nd)"},
+{r:143,n:"Jrue Holiday",t:"POR",p:"PG,SG",s:"6.1 AST/2.6 3PM",note:"Veteran stabilizer; crowded new POR backcourt (Morant+Lillard).",imp:[-1,-1,0,-1,-1,0,0,0,0],av:"B",src:{rw:132,y:159,e:140},depthRole:"Bench (2nd)"},
+{r:144,n:"Peyton Watson",t:"CLE",p:"SF,PF",s:"1.1 BLK/0.9 STL/14.6 PTS",note:"Two-way wing traded to CLE — minutes TBD in a deep rotation. Yahoo lists day-to-day (hamstring).",imp:[-1,-1,-1,0,0,-1,0,0,0],av:"C",src:{rw:116,y:154,e:164},depthRole:"Starter"},
+{r:145,n:"Dillon Brooks",t:"PHX",p:"SF,PF",s:"20.2/2.3 3PM",note:"Scoring/3s; 43.5% FG + thin defense, new PHX role.",imp:[0,-1,-1,-1,-1,-1,-1,0,0],av:"A",src:{rw:149,y:153,e:138},depthRole:"Starter"},
+{r:146,n:"Anthony Black",t:"ORL",p:"PG,SG,SF",s:"15/3.7 AST/1.4 STL",note:"Two-way guard, growing role; 73.2% FT limits the ceiling.",imp:[-1,-1,-1,0,-1,-1,-1,0,0],av:"B",src:{rw:118,y:174,e:149},depthRole:"Bench (2nd)"},
+{r:147,n:"Moses Moody",t:"GSW",p:"SG/SF/PF",s:"2.5 3PM/0.9 TO",note:"Clean low-usage shooter; thin AST/REB. Expected to miss a large chunk of 2026-27 on injury rehab.",imp:[-1,-1,-1,-1,-1,0,0,0,1],av:"E",src:{rw:147,y:null,e:null},depthRole:"Out"},
+{r:148,n:"Herbert Jones",t:"NOP",p:"SG,SF",s:"1.6 STL/1.4 3PM",note:"Steals specialist; 38.3% FG is a real cost.",imp:[-1,-1,-1,1,-1,-1,-1,0,0],av:"B",src:{rw:148,y:null,e:null},depthRole:"Starter"},
+{r:149,n:"Ace Bailey",t:"UTA",p:"SF,PF",s:"13.8/1.9 3PM/0.7 BLK (rookie)",note:"2nd-year upside pick; 44.3% FG rookie floor.",imp:[-1,-1,-1,-1,-1,-1,-1,-1,0],av:"B",src:{rw:150,y:158,e:136},depthRole:"Bench (2nd)",sleeper:1,sleeperNote:"Rookie shooting was raw; a second-year efficiency jump unlocks real scoring/3s upside."},
+{r:150,n:"Isaiah Stewart",t:"MEM",p:"PF,C",s:"1.6 BLK, traded to MEM",note:"Cheap blocks; thin scoring/boards role.",imp:[-1,-1,-1,-1,0,-1,-1,-1,0],av:"A",src:{rw:156,y:142,e:null},depthRole:"Bench (2nd)"},
+{r:151,n:"Jerami Grant",t:"MEM",p:"SF,PF",s:"18.4/2.4 3PM",note:"Scoring+3s, traded to MEM; thin rebounding.",imp:[0,-1,-1,-1,-1,0,0,0,0],av:"B",src:{rw:129,y:null,e:176},depthRole:"Bench (2nd)"},
+{r:152,n:"Saddiq Bey",t:"NOP",p:"SF,PF",s:"17.7/2.1 3PM/5.6 REB (72 gms)",note:"Reliable scoring/3s with low TO.",imp:[-1,0,-1,-1,-1,0,0,0,1],av:"A",src:{rw:106,y:190,e:167},depthRole:"Starter"},
+{r:153,n:"Julian Champagnie",t:"SAS",p:"SF,PF",s:"2.4 3PM/5.8 REB (82 gms)",note:"Durable 3s+reb glue wing.",imp:[-1,-1,-1,-1,-1,0,0,0,0],av:"A",src:{rw:137,y:165,e:163},depthRole:"Bench (2nd)"},
+{r:154,n:"Davion Mitchell",t:"MIA",p:"PG",s:"6.5 AST/1.5 TO/49% FG",note:"Clean assists; 64.6% FT hurts, Giannis arrival changes the offense.",imp:[-1,-1,0,-1,-1,-1,0,-2,1],av:"B",src:{rw:141,y:151,e:185},depthRole:"Starter"},
+{r:155,n:"P.J. Washington",t:"DAL",p:"PF,C",s:"7.0 REB/1.0 STL/1.1 BLK",note:"Defensive-forward stat-stuffer; 68.7% FT.",imp:[-1,-1,-1,0,0,-1,0,-1,0],av:"A",src:{rw:130,y:179,e:173},depthRole:"Starter"},
+{r:156,n:"Quentin Grimes",t:"LAL",p:"SG,SF",s:"13.4/3.3 AST/84% FT",note:"Complementary guard, signed with LAL; low ceiling but clean.",imp:[-1,-1,-1,-1,-1,-1,0,1,0],av:"A",src:{rw:152,y:180,e:166},depthRole:"Starter"},
+{r:157,n:"Kyle Filipowski",t:"UTA",p:"PF,C",s:"7.2 REB/2.6 AST",note:"Passing big flex; 0.5 BLK, crowded UTA frontcourt.",imp:[-1,-1,-1,-1,-1,-1,0,-1,0],av:"B",src:{rw:153,y:173,e:183},depthRole:"Bench (deep)"},
+
+];
+
+// ---------- 2025-26 per-game stats (Basketball-Reference) ----------
+// [G, PTS, REB, AST, STL, BLK, 3PM, FGM, FGA, FTM, FTA, TO]; traded players use their combined-season line.
+// Haliburton (21), Kyrie (65) and Lillard (99) have no 2025-26 line, so they fall back to my own rating.
+const STATS = {
+1:[65,27.7,12.9,10.7,1.4,0.8,1.7,9.9,17.4,6.1,7.4,3.7],
+2:[64,25.0,11.5,3.1,1.0,3.1,1.9,8.6,16.9,5.8,7.0,2.4],
+3:[68,31.1,4.3,6.6,1.4,0.8,1.7,10.8,19.4,7.9,9.0,2.2],
+4:[64,33.5,7.7,8.3,1.6,0.5,4.0,10.8,22.8,7.9,10.1,4.0],
+11:[70,27.9,4.5,5.7,1.5,0.3,3.2,9.7,20.0,5.3,6.1,2.8],
+7:[61,28.8,5.0,3.7,1.4,0.8,3.4,9.9,20.2,5.7,7.2,2.9],
+15:[75,25.4,4.4,7.1,0.9,0.4,3.3,8.8,18.1,4.6,5.2,2.3],
+5:[36,27.6,9.8,5.4,0.9,0.7,0.4,10.4,16.6,6.4,9.9,3.2],
+8:[70,28.3,4.1,6.6,1.9,0.8,3.1,9.9,21.4,5.3,6.0,2.4],
+6:[64,23.9,5.5,9.9,1.4,0.8,2.0,8.6,18.6,4.8,6.0,3.7],
+16:[72,22.5,10.3,7.9,1.2,0.4,1.7,8.3,17.1,4.2,5.3,3.4],
+23:[51,23.3,4.7,5.5,1.1,0.4,2.3,7.3,14.9,6.3,7.3,3.0],
+9:[16,21.8,10.0,5.3,1.4,0.2,2.9,7.4,17.9,4.1,4.9,2.4],
+21:[65,27.9,6.4,3.6,1.9,0.4,2.6,9.8,19.4,5.7,6.4,2.0],
+13:[80,18.1,7.5,5.9,1.4,1.5,0.9,7.1,14.0,3.0,3.7,2.6],
+12:[70,21.0,6.7,4.5,1.2,0.9,1.0,8.0,17.1,4.0,4.9,2.3],
+10:[75,20.1,11.9,3.0,0.9,0.5,1.5,6.9,13.8,4.8,5.5,2.5],
+14:[78,26.0,5.5,4.8,0.8,0.9,2.4,9.2,17.6,5.2,6.0,3.2],
+17:[43,26.6,3.6,4.7,1.1,0.4,4.4,8.7,18.6,4.7,5.1,2.8],
+43:[42,26.7,6.9,2.1,1.0,0.5,2.7,9.1,19.2,5.7,6.4,1.5],
+18:[79,18.3,7.8,5.3,1.5,0.6,0.3,7.1,13.2,3.8,4.9,2.4],
+25:[69,17.1,8.9,1.7,0.6,1.9,1.3,6.3,11.3,3.3,4.1,1.6],
+37:[66,21.5,5.7,3.8,1.5,0.4,3.2,7.5,15.9,3.3,3.7,1.8],
+26:[73,20.1,10.0,3.2,1.2,0.7,1.7,6.9,15.7,4.5,5.8,1.6],
+24:[70,23.6,4.8,8.0,1.1,0.4,3.1,7.0,16.0,6.6,7.5,3.5],
+20:[72,20.4,8.9,6.2,1.2,1.1,0.6,8.1,15.6,3.6,5.2,3.2],
+22:[64,26.1,3.9,6.0,0.8,0.3,1.9,8.5,18.7,7.1,8.1,3.1],
+38:[77,16.5,4.4,5.4,1.1,1.3,2.7,5.7,14.4,2.4,2.6,1.7],
+30:[65,18.2,9.0,3.6,0.7,1.7,1.0,7.2,13.2,2.8,4.6,1.9],
+19:[74,26.0,3.3,6.8,0.8,0.1,2.6,9.3,19.9,4.8,5.7,2.4],
+27:[54,17.0,8.3,9.1,1.0,0.5,1.9,5.9,13.3,3.2,4.2,3.6],
+47:[76,11.9,6.8,5.9,2.0,0.4,0.3,5.3,10.2,1.0,1.6,1.8],
+53:[77,12.1,11.6,2.1,0.6,1.7,1.1,4.6,8.9,1.8,2.6,1.2],
+36:[70,19.5,10.5,2.0,0.8,0.8,0.0,7.5,11.5,4.6,6.1,1.9],
+61:[78,20.8,3.4,3.7,1.3,0.5,3.2,7.0,15.3,3.6,3.9,2.1],
+54:[74,15.2,7.6,3.1,1.1,1.1,1.9,5.6,11.6,2.1,2.7,1.7],
+42:[82,20.1,4.1,4.1,1.0,0.5,2.0,7.1,14.7,3.8,4.2,2.0],
+29:[19,15.8,11.4,4.1,0.9,0.2,0.3,6.3,11.6,2.9,4.1,2.7],
+50:[52,24.2,7.1,3.0,1.1,0.3,3.4,8.5,18.4,3.8,4.4,2.3],
+55:[65,20.2,4.9,3.3,1.0,0.7,3.1,7.0,16.1,3.1,3.4,2.5],
+28:[71,28.7,6.9,5.1,1.0,0.4,2.0,10.4,21.7,6.0,7.5,3.6],
+49:[48,19.4,5.7,2.0,1.1,1.4,1.8,7.1,15.0,3.4,4.2,2.2],
+41:[66,24.2,6.9,6.7,0.8,0.6,1.9,7.5,16.1,7.4,9.2,3.8],
+56:[48,16.3,7.4,2.7,0.8,2.0,1.0,6.6,13.7,2.1,3.0,1.7],
+32:[60,20.9,6.1,7.2,1.2,0.6,1.3,7.9,15.3,3.9,5.3,3.0],
+44:[38,26.9,7.7,3.9,0.6,1.2,1.4,9.0,18.3,7.5,8.8,2.9],
+33:[72,20.1,4.8,7.1,1.2,0.2,3.8,7.0,17.3,2.2,2.5,2.8],
+52:[67,16.7,5.2,2.2,1.6,0.7,2.3,5.8,12.0,2.7,3.3,1.8],
+39:[33,17.1,4.6,5.5,1.2,0.3,0.7,6.5,13.5,3.3,3.9,1.9],
+40:[72,22.2,8.4,5.2,0.7,0.6,1.2,7.3,16.0,6.3,8.2,3.1],
+48:[34,20.6,5.2,3.3,0.9,0.3,1.4,7.2,14.9,4.8,5.8,1.7],
+51:[81,18.5,5.3,3.4,0.7,0.2,3.4,6.4,13.4,2.4,2.8,2.0],
+46:[5,14.4,10.8,3.0,1.4,1.8,1.2,5.2,7.4,2.8,4.0,3.2],
+34:[15,17.9,2.0,8.0,0.9,0.1,1.8,5.4,11.8,5.3,6.5,2.6],
+66:[54,23.6,3.7,6.1,1.1,0.3,2.5,7.4,16.3,6.2,7.0,3.1],
+71:[75,16.0,5.6,4.2,1.4,0.5,2.0,6.0,13.7,2.0,2.4,1.8],
+31:[20,20.4,11.1,2.8,1.1,1.7,0.5,8.5,16.7,3.0,4.1,2.1],
+74:[77,16.3,5.8,2.1,0.7,1.5,2.2,5.8,12.5,2.4,3.1,2.1],
+62:[82,14.4,3.8,3.7,1.3,0.8,1.9,5.8,11.7,1.0,1.2,1.0],
+79:[74,17.3,4.6,5.6,1.5,0.4,2.5,6.6,13.9,1.7,2.1,2.7],
+57:[33,20.5,4.8,4.1,0.7,0.4,2.5,7.5,15.6,3.0,3.3,1.9],
+69:[77,13.6,6.2,2.2,1.0,1.0,2.1,5.2,11.3,1.2,1.6,1.6],
+93:[70,16.4,4.0,5.9,1.3,0.1,2.5,5.7,12.9,2.4,3.0,1.5],
+87:[77,11.1,9.0,0.7,0.8,1.1,1.2,4.5,8.4,0.9,1.2,0.8],
+86:[73,9.9,5.7,3.1,2.0,0.9,0.1,4.2,7.9,1.5,2.6,1.5],
+64:[79,21.1,6.7,5.0,1.1,0.2,1.4,7.3,15.3,5.0,6.3,2.7],
+68:[77,21.5,5.6,3.7,0.8,0.7,1.8,8.0,16.7,3.8,4.6,2.4],
+45:[62,24.0,6.6,3.8,1.1,0.4,1.7,9.0,18.6,4.2,6.1,2.2],
+58:[68,16.7,5.3,7.4,1.1,0.3,1.2,5.7,12.0,4.1,5.6,3.2],
+107:[57,13.8,3.9,5.5,1.8,0.7,2.1,4.9,11.4,1.8,2.1,2.7],
+67:[20,19.5,3.3,8.1,1.0,0.3,1.0,6.6,16.1,5.3,5.9,3.6],
+99:[15,19.7,2.8,5.7,1.1,0.3,2.8,6.8,14.3,3.3,3.7,1.8],
+65:[72,18.6,3.8,6.2,1.2,0.3,1.8,7.1,14.5,2.6,3.4,2.3],
+78:[37,17.3,5.3,3.6,1.7,0.4,2.7,6.1,13.9,2.5,3.0,1.7],
+72:[76,10.9,11.5,1.7,0.8,1.6,0.0,4.4,6.5,2.1,4.0,1.4],
+77:[73,14.8,4.2,2.7,1.1,1.0,1.4,5.7,11.1,2.0,2.4,1.8],
+101:[38,20.0,5.6,4.9,1.4,0.2,0.8,6.3,12.2,6.5,7.6,1.6],
+100:[38,17.4,5.2,7.4,2.2,0.5,1.2,6.3,13.5,3.6,4.1,2.9],
+89:[58,21.7,3.5,2.5,1.1,0.2,2.7,7.3,15.4,4.5,5.5,1.9],
+59:[62,21.0,5.7,3.2,1.0,0.5,0.0,7.8,13.0,5.4,7.5,2.0],
+103:[77,15.8,6.9,1.9,0.7,0.9,2.3,5.7,12.6,2.1,2.7,1.4],
+82:[79,17.0,3.9,5.2,0.7,0.1,2.7,6.4,13.8,1.5,1.7,1.4],
+108:[82,13.5,2.9,3.4,1.5,0.7,2.8,5.0,11.5,0.8,1.0,1.5],
+96:[68,15.4,4.8,2.7,1.1,1.0,2.0,5.7,12.1,1.9,2.4,1.5],
+91:[11,13.6,11.1,1.1,0.6,1.9,0.1,5.6,8.9,2.3,2.9,2.4],
+85:[71,11.9,5.3,1.5,0.7,1.6,2.1,4.0,9.1,1.8,2.5,1.2],
+70:[45,18.8,2.4,6.7,1.0,0.2,2.7,6.9,14.9,2.3,2.7,2.9],
+115:[82,12.2,4.1,3.8,1.3,0.4,3.0,4.1,10.2,1.0,1.3,1.4],
+136:[41,10.9,10.4,4.8,1.3,0.5,0.6,4.4,8.7,1.5,2.8,2.5],
+73:[56,15.4,8.5,1.8,1.0,0.8,0.0,6.0,9.4,3.3,4.7,1.3],
+83:[66,12.0,7.4,4.8,1.1,0.3,1.5,4.6,9.0,1.4,1.9,1.9],
+63:[48,14.1,10.6,2.2,0.4,0.8,0.0,6.0,10.0,2.1,3.0,1.8],
+95:[14,16.7,5.4,6.4,1.6,0.2,1.4,6.3,13.0,2.8,3.2,3.4],
+98:[69,11.7,6.9,3.7,0.7,1.1,0.0,4.8,8.4,2.0,3.3,1.4],
+90:[64,15.1,8.4,3.3,0.6,0.6,1.6,6.2,12.5,1.2,1.5,1.3],
+97:[51,16.5,3.0,3.8,1.4,0.3,3.1,5.3,13.1,2.8,3.3,1.6],
+132:[23,14.0,5.7,1.7,1.0,1.6,1.3,5.5,13.0,1.7,2.1,1.2],
+88:[77,17.1,5.8,3.2,0.6,0.4,1.9,6.2,13.5,2.7,3.3,1.4],
+152:[72,17.7,5.6,2.5,0.9,0.1,2.1,6.1,13.4,3.4,4.1,0.9],
+130:[77,8.6,3.1,2.6,1.9,0.4,1.3,3.3,7.6,0.7,0.9,0.9],
+131:[82,13.4,5.1,2.5,1.1,0.4,2.7,4.8,10.9,1.2,1.7,1.8],
+110:[81,11.7,7.1,3.7,1.0,0.9,0.3,4.4,9.2,2.7,3.4,2.3],
+81:[80,12.7,4.1,4.6,1.2,0.2,2.9,4.4,10.5,1.0,1.1,1.6],
+84:[50,17.4,3.4,4.0,0.5,0.1,2.3,5.6,12.5,3.9,4.8,2.6],
+121:[48,14.8,5.1,4.5,1.0,0.9,2.1,5.3,12.0,2.2,2.7,2.6],
+140:[54,17.6,5.4,2.4,0.8,0.2,1.4,5.4,12.5,5.4,6.2,2.2],
+106:[76,18.7,3.3,3.9,0.8,0.5,2.5,6.9,15.2,2.4,3.1,1.8],
+144:[54,14.6,4.9,2.1,0.9,1.1,1.5,5.3,10.8,2.6,3.5,1.7],
+112:[62,13.6,5.9,2.8,0.6,0.4,1.5,4.9,10.5,2.3,2.7,1.7],
+146:[64,15.0,3.8,3.7,1.4,0.7,1.6,5.4,12.1,2.6,3.6,2.1],
+113:[56,11.7,4.3,2.6,1.3,1.0,1.2,4.1,9.7,2.4,3.2,1.4],
+137:[82,13.8,5.1,3.7,1.1,0.2,1.9,4.8,10.6,2.3,2.9,1.6],
+123:[69,14.8,3.4,3.6,0.8,0.3,1.8,5.6,10.8,1.8,2.1,1.4],
+109:[32,16.7,5.2,2.5,0.6,1.2,1.7,5.4,12.1,4.2,4.9,1.3],
+104:[77,18.4,2.9,4.1,1.0,0.3,0.6,6.5,13.1,4.9,5.6,1.2],
+125:[57,16.9,2.8,7.7,0.9,0.1,1.9,5.8,13.2,3.4,4.1,2.4],
+111:[62,8.7,6.7,2.3,1.1,0.4,0.1,3.5,5.7,1.7,2.5,1.7],
+129:[67,13.9,4.0,2.5,0.9,0.4,2.5,4.9,11.3,1.6,1.9,0.9],
+126:[57,13.6,3.3,3.6,1.2,0.3,1.1,5.0,10.4,2.5,2.8,1.4],
+151:[57,18.6,3.5,2.1,0.7,0.6,2.4,5.8,12.8,4.6,5.6,2.1],
+155:[56,14.2,7.0,1.8,1.0,1.1,1.4,5.3,11.8,2.2,3.3,1.7],
+116:[82,9.5,4.0,1.5,0.5,1.9,1.5,3.5,7.5,1.0,1.2,0.9],
+143:[53,16.3,4.6,6.1,1.0,0.1,2.6,6.0,13.4,1.7,2.0,2.8],
+114:[57,19.3,5.3,3.3,0.7,0.3,1.7,7.0,14.3,3.5,4.9,1.7],
+133:[60,10.5,6.3,1.5,1.2,0.5,1.6,4.0,9.7,0.9,1.1,1.4],
+124:[69,13.6,5.3,1.0,0.9,0.7,1.3,5.3,9.6,1.7,2.2,1.4],
+127:[65,14.1,3.1,5.4,1.2,0.2,0.6,5.2,9.5,2.9,3.5,1.4],
+153:[82,11.1,5.8,1.5,0.8,0.5,2.4,3.7,8.4,1.3,1.6,0.8],
+119:[39,19.2,2.8,2.3,0.7,0.3,2.5,6.7,14.0,3.2,3.6,1.9],
+120:[36,16.2,5.8,2.7,0.6,0.3,1.7,5.5,11.1,3.5,4.5,1.1],
+142:[50,14.1,5.0,1.6,1.4,0.5,1.7,5.1,10.9,2.2,2.9,1.4],
+154:[70,9.3,2.7,6.5,1.0,0.2,1.3,3.7,7.6,0.6,0.9,1.5],
+141:[75,15.4,5.0,4.7,0.7,0.3,0.8,6.2,12.2,2.2,2.9,2.0],
+105:[32,17.8,3.6,2.8,1.1,0.3,2.2,6.8,16.0,2.0,2.7,2.3],
+135:[76,10.2,8.4,1.7,0.8,1.3,0.0,4.3,6.6,1.6,2.3,1.0],
+134:[43,14.0,6.7,2.9,0.9,0.7,1.6,5.3,11.1,1.8,2.7,1.3],
+139:[78,11.8,7.4,2.0,0.8,0.6,0.9,4.2,8.2,2.5,3.2,1.3],
+147:[60,12.1,3.3,1.6,1.0,0.6,2.5,4.1,9.3,1.5,1.9,1.0],
+148:[56,8.9,3.4,2.8,1.6,0.5,1.4,3.3,8.5,0.9,1.1,1.3],
+145:[56,20.2,3.6,1.8,1.0,0.2,2.3,7.4,17.1,3.0,3.6,1.8],
+149:[72,13.8,4.2,1.8,0.8,0.7,1.9,5.5,12.4,0.9,1.2,1.5],
+118:[47,9.2,9.4,3.5,1.0,0.8,0.0,3.9,6.3,1.4,2.2,1.7],
+156:[75,13.4,3.6,3.3,0.9,0.4,1.7,4.5,10.1,2.7,3.2,1.8],
+157:[77,11.4,7.2,2.6,0.9,0.5,1.0,4.2,8.5,2.1,2.8,1.6],
+92:[45,13.8,4.2,1.9,0.6,0.5,2.3,4.7,11.4,2.0,2.5,1.4],
+117:[60,11.7,8.0,1.0,0.9,0.9,0.0,4.7,7.3,2.3,2.9,1.1],
+150:[58,10.0,5.0,1.1,0.3,1.6,0.7,3.8,6.9,1.7,2.3,1.2],
+128:[68,8.4,5.5,5.5,0.9,0.6,1.5,3.0,7.2,0.9,1.2,2.7]
+};
+
+// My own role adjustments (projection = last season x factor on volume stats). Only where the board notes support a change.
+const ROLE = {
+87:[0.80,"Myles Turner now starts ahead of him in Milwaukee"],
+90:[0.80,"Wendell Carter Jr. now starts ahead of him in Orlando"],
+97:[0.75,"buried 3rd on Charlotte's depth chart behind White and Schroder"],
+15:[0.97,"DeRozan's arrival trims his usage a little"],
+8:[0.95,"LeBron and Brown arrive, trimming his usage"],
+23:[1.08,"bigger role next to Luka now that LeBron's gone, though Luka stays the primary ball-handler"],
+13:[0.97,"Kawhi's arrival may trim his scoring"],
+12:[1.08,"second-year leap expected"],
+26:[0.92,"Giannis's arrival trims his scoring/usage"],
+28:[0.93,"now shares usage with Maxey and LeBron"],
+41:[0.85,"Morant AND Lillard both arrived, plus Holiday/Henderson — a real logjam, not a one-man hit"],
+32:[0.92,"age 41, smaller role behind Maxey and Brown"],
+74:[1.05,"second-year scoring upside"],
+108:[0.92,"VanVleet's return is a minutes risk"],
+88:[0.95,"new Phoenix role behind Booker"],
+81:[0.95,"limited by Booker's usage"],
+123:[0.90,"crowded Minnesota backcourt with LaMelo"],
+125:[0.90,"assist volume drops once Haliburton returns"],
+111:[1.10,"starting spot opens after Claxton left"],
+126:[1.10,"the Thunder's GM expects him to take on more minutes"],
+116:[0.90,"Zubac's arrival could squeeze his minutes"],
+143:[0.90,"crowded Portland backcourt"],
+120:[0.95,"DeRozan's addition trims his role"],
+154:[0.95,"Giannis's arrival changes the offense"],
+105:[0.95,"Bridges joins Phoenix"],
+139:[0.92,"Vučević's return complicates his minutes"],
+145:[0.95,"new Phoenix role"],
+149:[1.05,"second-year upside"],
+9:[1.12,"career-best usage path with Brown gone and George complementary at 36",{fg:0.05,ft:0}],
+37:[1.08,"McCollum's departure opens scoring touches, tempered by Mathurin now on the roster too"],
+50:[1.15,"new team, likely Brooklyn's clearest go-to scoring option"],
+17:[1.08,"Butler out for the season and Moody out most of it opens real touches"],
+7:[0.98,"LaMelo's arrival trims his assist load slightly"],
+33:[0.90,"new team sharing the backcourt with Edwards"],
+4:[1.03,"LeBron now gone, even more clearly the offensive focal point"],
+31:[1.00,"traded to Washington in Feb 2026 but hadn't made his Wizards debut as of late June — unproven fit, not a fresh-arrival bump"],
+14:[0.97,"turning 38; already a full season into Houston so no integration uncertainty, just a mild age-related dip"],
+21:[1.05,"new team, clear #1 scoring option per Barnes's own note"],
+47:[0.95,"McCollum's arrival trims his modest playmaking load"],
+63:[1.06,"first full season as Indiana's clear starting center after last year's partial-season trade"],
+64:[1.03,"Claxton's departure opens more paint touches"],
+70:[1.12,"traded to a Clippers backcourt with no established hierarchy after the Kawhi/Zubac/Harden teardown"],
+79:[1.05,"Giannis's departure opens usage, tempered by Herro's arrival as a direct competitor"],
+100:[1.03,"Giannis's departure opens playmaking reps, tempered by Herro's arrival"],
+85:[1.08,"already an established Buck; Giannis's departure opens center touches cleanly"],
+96:[0.88,"Giannis's arrival pushes him clearly into a complementary role"],
+84:[1.08,"LaMelo's departure opens lead-guard usage in Charlotte"],
+99:[1.08,"Morant's departure opens backcourt usage in Memphis"],
+51:[1.06,"LaMelo's departure opens real shot volume for him too"],
+58:[0.97,"entering his 3rd season; Dylan Harper's arrival is a mild ball-handling-reps nudge down"]
+
+};
+
+const AV_GP = {A:76,B:70,C:58,D:44,E:30};
+const Z_HI = 4, Z_LO = -3.5;
+let MODEL = null;
+let VALUE_RANK_MAP = null;
+
+function vecFrom(s, f, lg, effAdj){
+  effAdj = effAdj || {fg:0, ft:0};
+  const pts=s[1]*f, reb=s[2]*f, ast=s[3]*f, stl=s[4]*f, blk=s[5]*f, tpm=s[6]*f;
+  const fga=s[8]*f, fta=s[10]*f, to=s[11]*f;
+  // FG%/FT% computed as a rate (corrected by effAdj where a sample is known-unrepresentative, e.g. a tiny injury-return stretch), then re-applied to scaled attempts.
+  const rawFgPct = s[8]>0 ? s[7]/s[8] : lg.fg;
+  const rawFtPct = s[10]>0 ? s[9]/s[10] : lg.ft;
+  const fgPct = Math.max(0.25, Math.min(0.75, rawFgPct + effAdj.fg));
+  const ftPct = Math.max(0.40, Math.min(0.95, rawFtPct + effAdj.ft));
+  const fgm = fgPct*fga, ftm = ftPct*fta;
+  // FG% and FT% are volume-weighted: makes minus (league avg x attempts). Turnovers count against you.
+  return [pts, reb, ast, stl, blk, tpm, fgm - lg.fg*fga, ftm - lg.ft*fta, -to];
+}
+function computeModel(){
+  const pool = players.filter(p=>STATS[p.r]);
+  let sFgm=0,sFga=0,sFtm=0,sFta=0;
+  pool.forEach(p=>{ const s=STATS[p.r]; sFgm+=s[7]; sFga+=s[8]; sFtm+=s[9]; sFta+=s[10]; });
+  const lg = {fg:sFgm/sFga, ft:sFtm/sFta};
+  const vecs = pool.map(p=>vecFrom(STATS[p.r],1,lg));
+  const mean = [], sd = [];
+  for(let c=0;c<9;c++){
+    const col = vecs.map(v=>v[c]);
+    const m = col.reduce((a,b)=>a+b,0)/col.length;
+    const varr = col.reduce((a,b)=>a+(b-m)*(b-m),0)/col.length;
+    mean.push(m); sd.push(Math.sqrt(varr)||1);
+  }
+  const zOf = v => v.map((x,i)=>Math.max(Z_LO, Math.min(Z_HI, (x-mean[i])/sd[i])));
+  players.forEach(p=>{
+    const s = STATS[p.r];
+    const role = ROLE[p.r] || null;
+    p.role = role;
+    if(s){
+      p.hasData = true;
+      p.zLast = zOf(vecFrom(s,1,lg));
+      p.zProj = role ? zOf(vecFrom(s,role[0],lg,role[2])) : p.zLast;
+    } else {
+      p.hasData = false;
+      p.zLast = null;
+      p.zProj = p.imp.map(x=>x*0.8);
+    }
+  });
+  MODEL = {lg, mean, sd};
+}
+function contrib(pl){
+  const m = AV_MULT[pl.av] || 0.8;
+  return pl.zProj.map(z=>z*m);
+}
+
+// ---------- state ----------
+const OWNER_NAMES = ['Allen','German','Wendy','Mike','Jaq','Lloyd','Doy','Royce','Orv','Gab','Kel','Teri'];
+function defaultTeamNames(){ return OWNER_NAMES.slice(); }
+function genericTeamNames(){
+  const names = [];
+  for(let i=1;i<=NUM_TEAMS;i++) names.push(i===MY_TEAM ? 'You' : ('Team '+i));
+  return names;
+}
+let state = { pick: 1, view: 'avail', tab: 'board', posFilter: null, drafted: {}, teamNames: defaultTeamNames(), locked: true, heatSortKey: 'rank', heatSortDir: 'asc', sleeperSort: 'gap' };
+function setSleeperSort(mode){ state.sleeperSort = mode; render(); }
+
+// Paste your deployed Apps Script Web App URL here after setup (see AppsScript_Code.gs).
+// Leave blank to run on localStorage only (per-browser, same as before).
+const DB_URL = "https://script.google.com/macros/s/AKfycbwgkc-0b0wzpGZML1gWQco60gRmA_yKSmNa_jHtWXE1RLnBPTOtH3rQ0nNAJxo85AIygQ/exec";
+
+function applyLoadedState(parsed){
+  if(!parsed || typeof parsed !== 'object') return;
+  state.pick = parsed.pick || 1;
+  state.drafted = parsed.drafted || {};
+  state.teamNames = (parsed.teamNames && parsed.teamNames.length===NUM_TEAMS) ? parsed.teamNames : defaultTeamNames();
+  if(JSON.stringify(state.teamNames) === JSON.stringify(genericTeamNames())){
+    state.teamNames = defaultTeamNames();
+  }
+  state.locked = (typeof parsed.locked === 'boolean') ? parsed.locked : true;
+}
+function loadState(){
+  try{
+    const raw = localStorage.getItem('draftBoard2026v2');
+    if(raw){
+      applyLoadedState(JSON.parse(raw));
+      return;
+    }
+    const old = localStorage.getItem('draftBoard2026');
+    if(old){
+      const parsedOld = JSON.parse(old);
+      if(parsedOld && parsedOld.drafted){
+        const migrated = {};
+        Object.keys(parsedOld.drafted).forEach(k=>{
+          if(parsedOld.drafted[k]==='me') migrated[k] = MY_TEAM;
+        });
+        state.pick = parsedOld.pick || 1;
+        state.drafted = migrated;
+      }
+    }
+  }catch(e){ /* storage unavailable, start fresh */ }
+}
+function saveState(){
+  try{ localStorage.setItem('draftBoard2026v2', JSON.stringify({pick:state.pick, drafted:state.drafted, teamNames:state.teamNames, locked:state.locked})); }
+  catch(e){ /* ignore */ }
+  pushToRemote();
+}
+// --- Remote sync (Google Apps Script backend). No-ops silently if DB_URL isn't set. ---
+function pushToRemote(){
+  if(!DB_URL) return;
+  const payload = {pick:state.pick, drafted:state.drafted, teamNames:state.teamNames, locked:state.locked};
+  try{
+    fetch(DB_URL, { method:'POST', body: JSON.stringify({action:'save', data:payload}) }).catch(()=>{});
+  }catch(e){ /* offline or blocked — localStorage already has it */ }
+}
+async function syncFromRemote(){
+  if(!DB_URL) return;
+  try{
+    const res = await fetch(DB_URL + '?action=load');
+    const json = await res.json();
+    if(json && json.state){
+      applyLoadedState(json.state);
+      saveState(); // mirror into localStorage as the offline cache too
+      renderPosFilter(); renderLockUI(); renderHeader(); render();
+    }
+  }catch(e){ /* offline, or DB_URL not deployed yet — keep showing local data */ }
+}
+function archiveCurrentDraft(){
+  if(!DB_URL){ alert('Set DB_URL first (see AppsScript_Code.gs) to save drafts to history.'); return; }
+  const label = prompt('Label this draft (e.g. "2026-27 Season"):', new Date().getFullYear()+' draft');
+  if(!label) return;
+  const payload = {pick:state.pick, drafted:state.drafted, teamNames:state.teamNames, locked:state.locked};
+  fetch(DB_URL, { method:'POST', body: JSON.stringify({action:'archive', label, data:payload}) })
+    .then(()=>alert('Saved "'+label+'" to your draft history sheet.'))
+    .catch(()=>alert('Could not reach the database — check DB_URL and your internet connection.'));
+}
+
+function movePick(d){
+  state.pick = Math.max(1, state.pick + d);
+  saveState(); renderHeader(); render();
+}
+function setView(v){
+  state.view = v;
+  document.getElementById('btnAvail').classList.toggle('active', v==='avail');
+  document.getElementById('btnAll').classList.toggle('active', v==='all');
+  render();
+}
+const POSITIONS = ['PG','SG','SF','PF','C'];
+function setPosFilter(pos){
+  state.posFilter = (state.posFilter === pos) ? null : pos;
+  renderPosFilter();
+  render();
+}
+function renderPosFilter(){
+  const el = document.getElementById('posFilter');
+  let html = '<button class="'+(state.posFilter===null?'active':'')+'" onclick="setPosFilter(null)">All</button>';
+  POSITIONS.forEach(pos=>{
+    html += '<button class="'+(state.posFilter===pos?'active':'')+'" onclick="setPosFilter(\''+pos+'\')">'+pos+'</button>';
+  });
+  el.innerHTML = html;
+}
+function matchesPos(pl){
+  if(!state.posFilter) return true;
+  return pl.p.split(',').includes(state.posFilter);
+}
+function setTab(t){
+  state.tab = t;
+  document.getElementById('tabBoard').classList.toggle('active', t==='board');
+  document.getElementById('tabFit').classList.toggle('active', t==='fit');
+  document.getElementById('tabSleepers').classList.toggle('active', t==='sleepers');
+  document.getElementById('tabHeat').classList.toggle('active', t==='heat');
+  render();
+}
+// Drafts a player to whichever team owns the current pick (snake order), then advances the pick counter.
+// A published page can't fetch outside sites or run Claude's own research tools itself —
+// so "refresh" here means: copy a ready-made request, paste it to Claude in chat to do the real work.
+function copyRefreshPrompt(){
+  const text = "Update injuries, depth chart, and ADP for the draft board, and apply any changes you find.";
+  const btn = document.getElementById('refreshBtn');
+  const done = () => {
+    const old = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    setTimeout(()=>{ btn.textContent = old; }, 2200);
+  };
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done).catch(()=>{
+        prompt('Copy this and paste it to Claude in chat:', text);
+      });
+    } else {
+      prompt('Copy this and paste it to Claude in chat:', text);
+    }
+  }catch(e){
+    prompt('Copy this and paste it to Claude in chat:', text);
+  }
+}
+function toggleLock(){
+  state.locked = !state.locked;
+  saveState();
+  renderLockUI();
+  renderHeader();
+  render();
+}
+function renderLockUI(){
+  const btn = document.getElementById('lockBtn');
+  btn.textContent = state.locked ? '🔒 Locked' : '🔓 Unlocked';
+  const line = document.getElementById('lockLine');
+  line.classList.toggle('show', state.locked);
+  line.textContent = state.locked ? 'Drafting is locked — browsing only. Tap 🔒 above to unlock on this device when your draft starts.' : '';
+}
+function draftPlayer(r, teamOverride){
+  if(state.locked){ alert('Drafting is locked. Tap 🔒 Locked at the top to unlock it on this device.'); return; }
+  const team = teamOverride || teamOnClock(state.pick);
+  state.drafted[r] = team;
+  state.pick = state.pick + 1;
+  saveState();
+  closeSheet();
+  renderHeader(); render();
+}
+function pickOtherTeam(r){
+  if(state.locked){ alert('Drafting is locked. Tap 🔒 Locked at the top to unlock it on this device.'); return; }
+  const input = prompt('Which team drafted this player? Enter 1-12 (draft slot order: '+state.teamNames.map((n,i)=>(i+1)+' '+n).join(', ')+').');
+  const n = parseInt(input, 10);
+  if(n >= 1 && n <= NUM_TEAMS){ draftPlayer(r, n); }
+}
+function undoPlayer(r){
+  if(state.locked){ alert('Drafting is locked. Tap 🔒 Locked at the top to unlock it on this device.'); return; }
+  delete state.drafted[r];
+  saveState();
+  renderHeader(); render();
+}
+function resetAll(){
+  if(state.locked){ alert('Drafting is locked. Tap 🔒 Locked at the top to unlock it on this device first.'); return; }
+  if(confirm('Reset the whole board? This clears every drafted pick, team names, and the pick counter.')){
+    state = {pick:1, view:state.view, tab:state.tab, drafted:{}, teamNames: defaultTeamNames()};
+    saveState(); renderHeader(); render();
+  }
+}
+function jumpTo(n){ state.pick = n; saveState(); renderHeader(); render(); }
+function renameTeam(teamNum){
+  if(state.locked){ alert('Drafting is locked. Tap 🔒 Locked at the top to unlock it on this device first.'); return; }
+  const current = state.teamNames[teamNum-1];
+  const next = prompt('Name for team '+teamNum+':', current);
+  if(next && next.trim()){
+    state.teamNames[teamNum-1] = next.trim().slice(0,24);
+    saveState(); renderHeader(); render();
+  }
+}
+
+// ---------- team math ----------
+function rosterFor(teamNum){
+  return Object.keys(state.drafted)
+    .filter(k=>state.drafted[k]===teamNum)
+    .map(k=>players.find(p=>p.r==k))
+    .filter(Boolean);
+}
+function teamTotals(teamNum){
+  const totals = [0,0,0,0,0,0,0,0,0];
+  const roster = rosterFor(teamNum);
+  roster.forEach(pl=>{
+    const c = contrib(pl);
+    c.forEach((v,i)=>{ totals[i]+=v; });
+  });
+  return {totals, count: roster.length, roster};
+}
+const sum = a => a.reduce((x,y)=>x+y,0);
+function ord(n){ const s=['th','st','nd','rd']; const v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
+function fmtSign(x){ const r = Math.abs(x).toFixed(1); if(parseFloat(r)===0) return '0.0'; return (x>=0?'+':'−')+r; }
+
+function whatIf(pl){
+  const all = [];
+  for(let t=1;t<=NUM_TEAMS;t++) all.push(teamTotals(t).totals);
+  const mine = all[MY_TEAM-1];
+  const c = contrib(pl);
+  const after = mine.map((v,i)=>v+c[i]);
+  const rankOf = (val, idx) => {
+    let n = 0;
+    for(let t=1;t<=NUM_TEAMS;t++){
+      if(t===MY_TEAM) continue;
+      const o = idx===null ? sum(all[t-1]) : all[t-1][idx];
+      if(o > val + 1e-9) n++;
+    }
+    return n+1;
+  };
+  return {
+    before: mine, after, delta: c,
+    rankBefore: mine.map((v,i)=>rankOf(v,i)),
+    rankAfter: after.map((v,i)=>rankOf(v,i)),
+    overallBefore: sum(mine), overallAfter: sum(after),
+    overallRankBefore: rankOf(sum(mine), null), overallRankAfter: rankOf(sum(after), null)
+  };
+}
+
+// ---------- rendering pieces ----------
+function renderBalance(){
+  const {totals, count} = teamTotals(MY_TEAM);
+  const barsEl = document.getElementById('balanceBars');
+  const maxAbs = Math.max(2, ...totals.map(v=>Math.abs(v)));
+  barsEl.innerHTML = CAT_NAMES.map((name,i)=>{
+    const v = totals[i];
+    const pct = Math.min(50, Math.abs(v)/maxAbs*50);
+    const fill = v>=0
+      ? '<div class="barfill pos" style="width:'+pct+'%"></div>'
+      : '<div class="barfill neg" style="width:'+pct+'%"></div>';
+    return '<div class="catrow"><div class="catlabel">'+name+'</div><div class="bartrack"><div class="midline"></div>'+fill+'</div></div>';
+  }).join('');
+
+  const calloutEl = document.getElementById('balanceCallout');
+  if(count < 2){
+    calloutEl.textContent = 'Draft a couple more players to see where your build is leaning.';
+  } else {
+    const ranked = CAT_NAMES.map((name,i)=>({name, v:totals[i]})).sort((a,b)=>a.v-b.v);
+    const weakest = ranked.slice(0,2).map(x=>x.name).join(' and ');
+    const strongest = ranked.slice(-2).map(x=>x.name).join(' and ');
+    calloutEl.textContent = 'Strongest so far: ' + strongest + '. Thinnest: ' + weakest + ' — worth prioritizing your next couple picks there.';
+  }
+}
+
+function renderLeague(){
+  const totalDrafted = Object.keys(state.drafted).length;
+  document.getElementById('leagueCount').textContent = totalDrafted + ' / ' + TOTAL_PICKS + ' picks';
+  const listEl = document.getElementById('leagueList');
+  let html = '';
+  for(let t=1;t<=NUM_TEAMS;t++){
+    const {totals, count, roster} = teamTotals(t);
+    const ranked = CAT_NAMES.map((name,i)=>({name, v:totals[i]})).sort((a,b)=>b.v-a.v);
+    const best = ranked.slice(0,2).map(x=>x.name).join(', ');
+    const worst = ranked.slice(-2).map(x=>x.name).join(', ');
+    const rosterNames = roster.map(p=>'<span>#'+p.r+' '+p.n+'</span>').join(', ') || '<span style="color:var(--muted)">no picks yet</span>';
+    html += '<div class="teamrow'+(t===MY_TEAM?' you':'')+'">'+
+      '<div class="th"><span class="tname" onclick="renameTeam('+t+')">'+state.teamNames[t-1]+(t===MY_TEAM?' (you)':'')+'</span><span class="tcount">'+count+' / 13</span></div>'+
+      (count>0 ? '<div class="tsummary">Best: '+best+' · Thin: '+worst+'</div>' : '')+
+      '<div class="troster" id="roster-'+t+'">'+rosterNames+'</div>'+
+      (count>0 ? '<button class="undo" style="margin-left:0;margin-top:4px;" onclick="toggleRoster('+t+')">show picks</button>' : '')+
+    '</div>';
+  }
+  listEl.innerHTML = html;
+}
+function toggleRoster(t){
+  const el = document.getElementById('roster-'+t);
+  el.classList.toggle('open');
+}
+
+function renderStandings(){
+  const allTotals = [];
+  for(let t=1;t<=NUM_TEAMS;t++){ allTotals.push(teamTotals(t).totals); }
+  const anyDrafted = Object.keys(state.drafted).length > 0;
+  const listEl = document.getElementById('standingsList');
+  if(!anyDrafted){
+    listEl.innerHTML = '<div class="modelnote">No picks logged yet — standings fill in once teams start drafting.</div>';
+    return;
+  }
+  listEl.innerHTML = CAT_NAMES.map((name,i)=>{
+    const rankedTeams = [];
+    for(let t=1;t<=NUM_TEAMS;t++){ rankedTeams.push({t, v:allTotals[t-1][i]}); }
+    // when every team is still tied at 0 in this category, rank is meaningless — show a dash
+    const allTied = rankedTeams.every(x=>Math.abs(x.v) < 1e-9);
+    rankedTeams.sort((a,b)=>b.v-a.v);
+    const myPos = rankedTeams.findIndex(x=>x.t===MY_TEAM) + 1;
+    const cls = allTied ? 'mid' : (myPos<=4 ? 'top' : (myPos<=8 ? 'mid' : 'bot'));
+    const rankLabel = allTied ? '— / 12' : (myPos+' / 12');
+    const order = rankedTeams.map(x=>x.t===MY_TEAM ? '<b style="color:var(--mine);">You</b>' : state.teamNames[x.t-1].slice(0,3)).join(' > ');
+    return '<div class="standrow"><div class="catlabel">'+name+'</div>'+
+      '<div class="rankbadge '+cls+'">'+rankLabel+'</div>'+
+      '<div class="rankdetail">'+(allTied ? 'No picks in this category yet' : order)+'</div></div>';
+  }).join('');
+}
+
+function renderHeader(){
+  document.getElementById('pickNum').textContent = state.pick;
+  const onClock = teamOnClock(state.pick);
+  const isMine = onClock === MY_TEAM;
+  const banner = document.getElementById('yourBanner');
+  banner.classList.toggle('show', isMine);
+  if(isMine) banner.textContent = 'YOUR PICK (#' + state.pick + ') — take someone now';
+  document.getElementById('onClockLine').innerHTML = isMine ? ''
+    : 'On the clock: <b onclick="renameTeam('+onClock+')">'+state.teamNames[onClock-1]+'</b>';
+
+  const slotRow = document.getElementById('slotRow');
+  slotRow.innerHTML = '';
+  MY_PICKS.forEach(n=>{
+    const chip = document.createElement('div');
+    chip.className = 'slotchip' + (n < state.pick ? ' done':'') + (n === state.pick ? ' now':'');
+    chip.textContent = '#'+n;
+    chip.onclick = ()=>jumpTo(n);
+    slotRow.appendChild(chip);
+  });
+
+  const {roster: myRoster} = teamTotals(MY_TEAM);
+  document.getElementById('myteamCount').textContent = myRoster.length + ' / 13';
+  const listEl = document.getElementById('myteamList');
+  if(myRoster.length===0){
+    listEl.innerHTML = '<div class="empty">No picks yet — tap "Draft" on a player when it\'s your turn.</div>';
+  } else {
+    listEl.innerHTML = myRoster.map(pl=>'<div>#'+pl.r+' <span>'+pl.n+'</span> — '+pl.t+' '+pl.p+'</div>').join('');
+  }
+  renderBalance();
+  renderLeague();
+  renderStandings();
+}
+
+// ---------- player rows ----------
+function zClass(z){ return z>=0.6 ? 'good' : (z<=-0.6 ? 'bad' : ''); }
+function stripHtml(pl){
+  const s = STATS[pl.r];
+  if(!s) return '<div class="gpline">No 2025-26 line — the model uses my own rating for him</div>';
+  const vals = [s[1].toFixed(1), s[2].toFixed(1), s[3].toFixed(1), s[4].toFixed(1), s[5].toFixed(1), s[6].toFixed(1),
+    Math.round(s[7]/s[8]*100)+'%', s[10]>0 ? Math.round(s[9]/s[10]*100)+'%' : '—', s[11].toFixed(1)];
+  return '<div class="gpline">2025-26 · '+s[0]+' games</div><div class="strip">'+
+    vals.map((v,i)=>'<div class="cell '+zClass(pl.zLast[i])+'"><span class="cl">'+CAT_NAMES[i]+'</span><span class="cv">'+v+'</span></div>').join('')+
+    '</div>';
+}
+function chipsHtml(pl){
+  const items = CAT_NAMES.map((n,i)=>({n, z:pl.zProj[i]})).filter(x=>Math.abs(x.z)>=0.8)
+    .sort((a,b)=>Math.abs(b.z)-Math.abs(a.z)).slice(0,5);
+  if(!items.length) return '';
+  return '<div class="chips">'+items.map(x=>'<span class="chip '+(x.z>0?'pos':'neg')+'">'+(x.z>0?'+':'−')+x.n+'</span>').join('')+'</div>';
+}
+function riskHtml(pl){
+  if(pl.av==='D' || pl.av==='E') return '<div class="risk high">⚠ Availability risk — projected limited games</div>';
+  if(pl.av==='C') return '<div class="risk mid">Watch: role or health still settling</div>';
+  return '';
+}
+function roleHtml(pl){
+  if(!pl.depthRole) return '';
+  const cls = pl.depthRole==='Starter' ? 'good' : (pl.depthRole==='Out' ? 'bad' : '');
+  const label = pl.depthRole==='Out' ? 'Out (per team depth chart)' : pl.depthRole;
+  return '<div class="rolebadge '+cls+'">'+label+'</div>';
+}
+function actionHtml(pl, status){
+  if(status){
+    const isMineRow = status === MY_TEAM;
+    const label = isMineRow ? 'Your team' : state.teamNames[status-1];
+    const undo = state.locked ? '' : '<button class="undo" onclick="undoPlayer('+pl.r+')">undo</button>';
+    return '<span class="tag '+(isMineRow?'mine':'taken')+'">'+label+'</span>'+undo;
+  }
+  if(state.locked){
+    return '<div class="rowbtns"><span class="locked-tag">🔒 Locked</span><button onclick="openImpact('+pl.r+')">Impact</button></div>';
+  }
+  const onClock = teamOnClock(state.pick);
+  const onClockIsMe = onClock === MY_TEAM;
+  const draftLabel = onClockIsMe ? 'Draft (You)' : 'Draft → ' + state.teamNames[onClock-1];
+  return '<div class="rowbtns">'+
+    '<button class="'+(onClockIsMe?'mine-btn':'taken-btn')+'" onclick="draftPlayer('+pl.r+')">'+draftLabel+'</button>'+
+    '<button onclick="openImpact('+pl.r+')">Impact</button>'+
+    '<button onclick="pickOtherTeam('+pl.r+')">other team…</button>'+
+    '</div>';
+}
+
+// ---------- impact sheet ----------
+function projTableHtml(pl){
+  const s = STATS[pl.r];
+  if(!s) return '<div class="modelnote">No 2025-26 line for this player, so the model uses my own rating instead of stats.</div>';
+  const f = pl.role ? pl.role[0] : 1;
+  const effAdj = (pl.role && pl.role[2]) || {fg:0, ft:0};
+  const one = x=>x.toFixed(1);
+  const pct = (m,a)=> a>0 ? (m/a*100).toFixed(1)+'%' : '—';
+  const rawFgPct = s[8]>0 ? s[7]/s[8] : 0.45, rawFtPct = s[10]>0 ? s[9]/s[10] : 0.75;
+  const projFgPct = Math.max(0.25, Math.min(0.75, rawFgPct + effAdj.fg));
+  const projFtPct = Math.max(0.40, Math.min(0.95, rawFtPct + effAdj.ft));
+  const rm = RETURN_MODEL[pl.r];
+  const projGP = rm ? Math.round((1-rm.outChance) * Math.max(0, 82-rm.startGame) * 0.95) : AV_GP[pl.av];
+  const rows = [
+    ['GP', s[0], projGP],
+    ['PTS', one(s[1]), one(s[1]*f)], ['REB', one(s[2]), one(s[2]*f)], ['AST', one(s[3]), one(s[3]*f)],
+    ['STL', one(s[4]), one(s[4]*f)], ['BLK', one(s[5]), one(s[5]*f)], ['3PM', one(s[6]), one(s[6]*f)],
+    ['FG%', pct(s[7],s[8]), (projFgPct*100).toFixed(1)+'%'], ['FT%', pct(s[9],s[10]), (projFtPct*100).toFixed(1)+'%'], ['TO', one(s[11]), one(s[11]*f)]
+  ];
+  let reason = pl.role
+    ? 'Projection = last season × '+f.toFixed(2)+' because '+pl.role[1]+'.'
+    : 'Projection = last season, with no role change assumed.';
+  if(effAdj.fg || effAdj.ft) reason += ' Shooting % nudged to correct for a sample I judged unrepresentative.';
+  if(rm) reason += ' GP reflects an estimated '+gameToDate(rm.startGame)+' return (see Layer 4 below for the full range), not the generic availability tier.';
+  return '<table class="ptable"><tr><th></th><th>2025-26</th><th>Proj (my est.)</th></tr>'+
+    rows.map(r=>'<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td></tr>').join('')+
+    '</table><div class="modelnote">'+reason+' Projected games come from his availability tier.</div>';
+}
+// ---------- Layer 4: Monte Carlo simulation ----------
+const AV_GP_SD = {A:3,B:6,C:11,D:13,E:13};
+// Fallback per-game anchors by imp rating (-2..2), used only when a player has no real 2025-26 line (true rookies).
+const IMP_ANCHOR = {
+  pts:[4,8,13,19,25], reb:[1.5,3,4.5,6.5,9], ast:[0.8,1.5,2.5,4,6],
+  stl:[0.3,0.6,0.9,1.3,1.8], blk:[0.2,0.4,0.6,1.0,1.6], tpm:[0.3,0.8,1.5,2.3,3.2],
+  fg:[0.40,0.43,0.46,0.50,0.55], ft:[0.60,0.68,0.75,0.82,0.88],
+  to:[3.2,2.5,1.8,1.2,0.7] // index runs with imp[8] (low TO = good), so high imp -> low TO
+};
+function impLookup(table, impVal){
+  const idx = Math.max(-2, Math.min(2, Math.round(impVal))) + 2;
+  return table[idx];
+}
+// Baseline per-game rate projection: [pts,reb,ast,stl,blk,tpm,fgPct,ftPct,to]
+function projectPerGame(pl){
+  const s = STATS[pl.r];
+  if(s){
+    const f = pl.role ? pl.role[0] : 1;
+    const effAdj = (pl.role && pl.role[2]) || {fg:0, ft:0};
+    const fgPct = Math.max(0.25, Math.min(0.75, (s[8]>0 ? s[7]/s[8] : 0.45) + effAdj.fg));
+    const ftPct = Math.max(0.40, Math.min(0.95, (s[10]>0 ? s[9]/s[10] : 0.75) + effAdj.ft));
+    return {rates:[s[1]*f, s[2]*f, s[3]*f, s[4]*f, s[5]*f, s[6]*f, fgPct, ftPct, s[11]*f], source:'stats'};
+  }
+  const im = pl.imp;
+  return {rates:[
+    impLookup(IMP_ANCHOR.pts, im[0]), impLookup(IMP_ANCHOR.reb, im[1]), impLookup(IMP_ANCHOR.ast, im[2]),
+    impLookup(IMP_ANCHOR.stl, im[3]), impLookup(IMP_ANCHOR.blk, im[4]), impLookup(IMP_ANCHOR.tpm, im[5]),
+    impLookup(IMP_ANCHOR.fg, im[6]), impLookup(IMP_ANCHOR.ft, im[7]), impLookup(IMP_ANCHOR.to, im[8])
+  ], source:'imp-fallback'};
+}
+function gaussianRandom(){
+  // Box-Muller
+  let u=0,v=0;
+  while(u===0) u=Math.random();
+  while(v===0) v=Math.random();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+}
+function playerUncertainty(pl){
+  // relative stdev applied per-category per simulated season — tight for a documented-healthy player,
+  // wide only where real uncertainty exists (chronic/current injury tier, a fresh situational change, or no NBA line yet)
+  let sd = 0.09;
+  if(pl.role) sd += 0.08;            // carries a situational (Layer 2) adjustment this year
+  if(!STATS[pl.r]) sd += 0.16;       // no real NBA line yet (true rookie)
+  const tierBump = {A:0, B:0.02, C:0.07, D:0.12, E:0.16};
+  sd += tierBump[pl.av] || 0.07;
+  return sd;
+}
+function percentile(sorted, p){
+  const idx = Math.max(0, Math.min(sorted.length-1, Math.floor(p*sorted.length)));
+  return sorted[idx];
+}
+// For players with a real, reported recovery target (not just a general availability tier), model
+// WHEN they come back rather than just HOW OFTEN — season start assumed ~Oct 21, ~82 games over ~174 days.
+// outChance = probability a simulated season has him returning 0 games at all (realistic for "out for the
+// season" / "no timetable" cases). startGame = expected game # of his debut if he does return this season.
+const RETURN_MODEL = {
+  101:{desc:"targeting Jan–Feb return (his own stated timeline)", outChance:0.05, startGame:48, startSd:8},
+  117:{desc:"team says All-Star break or out for the year — modeled as that literal split", outChance:0.5, startGame:55, startSd:6},
+  115:{desc:"Achilles tear, team says could miss the whole season", outChance:0.85, startGame:70, startSd:8},
+  68: {desc:"partial Achilles + heel surgery, genuinely no timetable", outChance:0.15, startGame:32, startSd:12},
+  147:{desc:"patellar tendon tear, expected to miss a large chunk", outChance:0.6, startGame:65, startSd:10},
+};
+function sampleReturnGames(rm){
+  if(Math.random() < rm.outChance) return 0;
+  const startGame = Math.max(0, Math.min(82, Math.round(rm.startGame + gaussianRandom()*rm.startSd)));
+  const remaining = Math.max(0, 82 - startGame);
+  return Math.max(0, Math.min(82, Math.round(remaining * (0.80 + Math.random()*0.35))));
+}
+function runSimulation(pl, trials){
+  trials = trials || 1500;
+  const base = projectPerGame(pl).rates;
+  const sdRel = playerUncertainty(pl);
+  const rm = RETURN_MODEL[pl.r];
+  const gpMean = AV_GP[pl.av], gpSd = AV_GP_SD[pl.av];
+  const perGameTrials = [[],[],[],[],[],[],[],[],[]];
+  const seasonTrials = [[],[],[],[],[],[],[],[],[]];
+  for(let t=0;t<trials;t++){
+    const gp = rm ? sampleReturnGames(rm) : Math.max(0, Math.min(82, Math.round(gpMean + gaussianRandom()*gpSd)));
+    for(let c=0;c<9;c++){
+      const isPct = (c===6 || c===7);
+      const shock = 1 + gaussianRandom()*(isPct ? sdRel*0.5 : sdRel);
+      let rate = base[c]*shock;
+      if(isPct) rate = Math.max(0.2, Math.min(0.95, rate));
+      else rate = Math.max(0, rate);
+      perGameTrials[c].push(rate);
+      seasonTrials[c].push(isPct ? rate : rate*gp);
+    }
+  }
+  const summarize = arr => {
+    const sorted = arr.slice().sort((a,b)=>a-b);
+    return { p10: percentile(sorted,0.10), p50: percentile(sorted,0.50), p90: percentile(sorted,0.90) };
+  };
+  return {
+    perGame: perGameTrials.map(summarize),
+    season: seasonTrials.map(summarize),
+    source: projectPerGame(pl).source,
+    returnModel: rm || null
+  };
+}
+function gameToDate(g){
+  const start = new Date(2026,9,21); // Oct 21, 2026 ~ assumed opener
+  const d = new Date(start.getTime() + g*2.12*86400000);
+  return d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+}
+function returnModelHtml(sim){
+  const rm = sim.returnModel;
+  if(!rm) return '';
+  const outPct = Math.round(rm.outChance*100);
+  return '<div class="modelnote" style="margin-top:8px;"><b>Return estimate:</b> '+rm.desc+'. Modeled as a '+outPct+'% chance he plays zero games this season at all, and — if he does suit up — an expected debut around <b>'+gameToDate(rm.startGame)+'</b> (±~'+Math.round(rm.startSd*2.12)+' days), based on typical recovery timelines for this injury type plus any team-stated target. This drives the games-played side of the simulation above directly, not just a generic tier.</div>';
+}
+function simHtml(pl){
+  const sim = runSimulation(pl);
+  const fmt = (v,isPct) => isPct ? (v*100).toFixed(1)+'%' : v.toFixed(1);
+  const rows = CAT_NAMES.map((name,i)=>{
+    const isPct = (i===6||i===7);
+    const pg = sim.perGame[i], se = sim.season[i];
+    return '<tr><td>'+name+'</td>'+
+      '<td>'+fmt(pg.p10,isPct)+' – '+fmt(pg.p90,isPct)+'</td>'+
+      '<td>'+(isPct ? fmt(se.p50,isPct) : Math.round(se.p10)+' – '+Math.round(se.p90))+'</td></tr>';
+  }).join('');
+  const srcNote = sim.source==='imp-fallback'
+    ? ' No 2025-26 line exists for him, so the simulation runs off my own rating-based estimate rather than real per-game numbers — treat this one as looser than most.'
+    : '';
+  return '<h3 style="font-family:var(--font-display);font-size:14px;margin:16px 0 6px;">Layer 4 — simulated range (1,500 seasons)</h3>'+
+    '<table class="ptable"><tr><th></th><th>Per-game (P10–P90)</th><th>Season total (P10–P90)</th></tr>'+rows+'</table>'+
+    returnModelHtml(sim)+
+    '<div class="modelnote">Games-played is sampled around his availability tier, tightly for a documented-healthy player (tier A/B) and widely only where real uncertainty exists — a current/chronic injury situation (tier C/D/E), a fresh Layer 2 situational change, or no NBA line yet (true rookies). P10 reflects a plausible below-average season for someone in his tier, not a freak worst case. My own simplified variance model, not empirically fitted.'+srcNote+'</div>';
+}
+function openImpact(r){
+  const pl = players.find(p=>p.r===r);
+  if(!pl) return;
+  const w = whatIf(pl);
+  const maxAbs = Math.max(2, ...w.before.map(Math.abs), ...w.after.map(Math.abs));
+  const bar = (v,cls)=>{
+    const wd = Math.min(50, Math.abs(v)/maxAbs*50);
+    return '<div class="sbar '+cls+' '+(v>=0?'pos':'neg')+'" style="width:'+wd+'%"></div>';
+  };
+  const rows = CAT_NAMES.map((name,i)=>{
+    const d = w.delta[i];
+    const rk = w.rankBefore[i]===w.rankAfter[i] ? ord(w.rankAfter[i]) : ord(w.rankBefore[i])+' → '+ord(w.rankAfter[i]);
+    return '<div class="srow"><div class="catlabel">'+name+'</div>'+
+      '<div class="strack"><div class="midline"></div>'+bar(w.before[i],'before')+bar(w.after[i],'after')+'</div>'+
+      '<div class="sdelta '+(d>=0.05?'up':(d<=-0.05?'down':''))+'">'+fmtSign(d)+'</div>'+
+      '<div class="srank">'+rk+'</div></div>';
+  }).join('');
+  const gains = CAT_NAMES.map((n,i)=>({n,d:w.delta[i]})).filter(x=>x.d>=0.5).sort((a,b)=>b.d-a.d).slice(0,3).map(x=>x.n);
+  const costs = CAT_NAMES.map((n,i)=>({n,d:w.delta[i]})).filter(x=>x.d<=-0.5).sort((a,b)=>a.d-b.d).slice(0,3).map(x=>x.n);
+  let verdict = gains.length ? 'Adds '+gains.join(', ')+'.' : 'No standout category gains.';
+  if(costs.length) verdict += ' Costs '+costs.join(', ')+'.';
+  const totalDrafted = Object.keys(state.drafted).length;
+  const earlyNote = totalDrafted < 24 ? '<div class="modelnote">League ranks are noisy this early — most teams have only a pick or two.</div>' : '';
+  const onClock = teamOnClock(state.pick);
+  const onClockIsMe = onClock === MY_TEAM;
+  const draftLabel = onClockIsMe ? 'Draft (You)' : 'Draft → ' + state.teamNames[onClock-1];
+  document.getElementById('sheetBody').innerHTML =
+    '<h2>If you draft '+pl.n+'</h2>'+
+    '<div class="sub">'+pl.t+' · '+pl.p+' · overall '+ord(w.overallRankBefore)+' → '+ord(w.overallRankAfter)+' among the 12 teams ('+fmtSign(w.overallAfter-w.overallBefore)+' total)</div>'+
+    rows+
+    '<div class="verdict">'+verdict+'</div>'+
+    earlyNote+
+    projTableHtml(pl)+
+    simHtml(pl)+
+    '<div class="sbtns"><button onclick="closeSheet()">Close</button><button class="primary" onclick="draftPlayer('+pl.r+')">'+draftLabel+'</button></div>';
+  document.getElementById('sheet').classList.add('open');
+}
+function closeSheet(e){
+  if(e && e.target && e.target.id !== 'sheet') return;
+  document.getElementById('sheet').classList.remove('open');
+}
+
+// ---------- board + best fit ----------
+function srcHtml(pl){
+  if(!pl.src) return '';
+  const parts = [];
+  parts.push('RotoWire ~'+pl.src.rw);
+  if(pl.src.y != null) parts.push('Yahoo '+pl.src.y);
+  if(pl.src.e != null) parts.push('ESPN '+pl.src.e);
+  return '<div class="srcline">'+parts.join(' · ')+'</div>';
+}
+function modelBadgeHtml(pl){
+  const mr = VALUE_RANK_MAP ? VALUE_RANK_MAP[pl.r] : null;
+  if(!mr) return '';
+  const diff = pl.r - mr; // positive = model likes him more than the board does
+  const cls = diff>=10 ? 'better' : (diff<=-10 ? 'worse' : '');
+  return '<div class="modelbadge '+cls+'">Model<span class="num">#'+mr+'</span></div>';
+}
+function boardRowHtml(pl, status){
+  const isMineRow = status === MY_TEAM;
+  const cls = 'row' + (status && !isMineRow ? ' is-taken' : '') + (isMineRow ? ' is-mine' : '');
+  return '<div class="'+cls+'">'+
+    '<div class="rank">'+pl.r+'</div>'+
+    modelBadgeHtml(pl)+
+    '<div class="info">'+
+      '<div class="namerow"><span class="name">'+pl.n+'</span><span class="team">'+pl.t+' · '+pl.p+'</span></div>'+
+      srcHtml(pl)+
+      stripHtml(pl)+
+      chipsHtml(pl)+
+      '<div class="note">'+pl.note+'</div>'+
+      '<div class="tagrow">'+riskHtml(pl)+roleHtml(pl)+'</div>'+
+      actionHtml(pl, status)+
+    '</div></div>';
+}
+function renderFit(q){
+  const listEl = document.getElementById('list');
+  const my = teamTotals(MY_TEAM);
+  let weights = new Array(9).fill(1);
+  let note;
+  if(my.count >= 3){
+    const order = my.totals.map((v,i)=>({v,i})).sort((a,b)=>a.v-b.v);
+    order.forEach((o,k)=>{ weights[o.i] = k<3 ? 2.0 : (k<6 ? 1.0 : 0.5); });
+    note = 'Thinnest right now: '+order.slice(0,3).map(o=>CAT_NAMES[o.i]).join(', ')+'. Available players ranked by how well they fill those, blended with overall value.';
+  } else {
+    note = 'Once you have 3 picks this ranks players by how well they fill your thinnest categories. Until then it is overall value only.';
+  }
+  const scored = players.filter(pl=>!state.drafted[pl.r]).filter(matchesPos).map(pl=>{
+    const c = contrib(pl);
+    const weighted = c.reduce((a,v,i)=>a+v*weights[i],0);
+    const value = sum(c);
+    return {pl, score: 0.65*weighted + 0.35*value};
+  }).filter(x=>!q || x.pl.n.toLowerCase().includes(q) || x.pl.t.toLowerCase().includes(q))
+    .sort((a,b)=>b.score-a.score).slice(0,20);
+  let html = '<div class="fitnote">'+note+' Positions aren\'t considered. Rank circle is green when this fit position beats his actual board slot by a lot, red when it\'s well behind it — the badge next to it shows that board slot.</div>';
+  scored.forEach((x,k)=>{
+    const pl = x.pl;
+    const fitDiff = pl.r - (k+1); // positive = Best Fit likes him better than his board slot
+    const rankCls = fitDiff>=10 ? 'good' : (fitDiff<=-10 ? 'bad' : '');
+    const boardBadge = '<div class="modelbadge">Board<span class="num">#'+pl.r+'</span></div>';
+    html += '<div class="row"><div class="rank '+rankCls+'">'+(k+1)+'</div>'+boardBadge+'<div class="info">'+
+      '<div class="namerow"><span class="name">'+pl.n+'</span><span class="team">'+pl.t+' · '+pl.p+'</span><span class="fitscore">fit '+x.score.toFixed(1)+'</span></div>'+
+      chipsHtml(pl)+
+      '<div class="note">'+pl.note+'</div>'+
+      riskHtml(pl)+
+      actionHtml(pl, null)+
+    '</div></div>';
+  });
+  if(!scored.length) html += '<div class="footnote">No players match.</div>';
+  listEl.innerHTML = html;
+}
+function computeValueRanks(){
+  const scored = players.map(pl=>({r:pl.r, val: sum(contrib(pl))}));
+  scored.sort((a,b)=>b.val-a.val);
+  const map = {};
+  scored.forEach((x,i)=>{ map[x.r] = i+1; });
+  return map;
+}
+function renderSleepers(q){
+  const listEl = document.getElementById('list');
+  const THRESHOLD = 24; // RotoWire's own definition: beats ADP by 2 rounds in a 12-team snake draft
+  const valueRanks = computeValueRanks();
+  let html = '<div class="fitnote">RotoWire defines a sleeper as a player with a real shot at beating his draft slot by two full rounds (24 spots in a 12-team snake). '
+    + 'This list is computed from that: it compares each player\'s board rank to where my impact model would rank him by pure value, and shows anyone the model likes by 24+ spots more than the board does. '
+    + 'The <b>Model #</b> badge on every row (board-wide, not just here) is that value rank — green when the model likes him well ahead of his slot, red when it rates him meaningfully below it.</div>';
+  const sortBtn = (mode,label) => '<button class="'+(state.sleeperSort===mode?'active':'')+'" onclick="setSleeperSort(\''+mode+'\')">'+label+'</button>';
+  html += '<div class="toggle" style="margin:0 14px 10px;">'+sortBtn('gap','Gap')+sortBtn('board','Board Rank')+sortBtn('model','Model Rank')+'</div>';
+  const pool = players.map(pl=>({pl, valueRank: valueRanks[pl.r], gap: pl.r - valueRanks[pl.r]}))
+    .filter(x=>x.gap >= THRESHOLD)
+    .filter(x=>matchesPos(x.pl))
+    .filter(x=>!q || x.pl.n.toLowerCase().includes(q) || x.pl.t.toLowerCase().includes(q))
+    .filter(x=>!state.drafted[x.pl.r] || state.view==='all');
+  if(state.sleeperSort==='board') pool.sort((a,b)=>a.pl.r-b.pl.r);
+  else if(state.sleeperSort==='model') pool.sort((a,b)=>a.valueRank-b.valueRank);
+  else pool.sort((a,b)=>b.gap-a.gap);
+  pool.forEach(x=>{
+    const pl = x.pl;
+    const status = state.drafted[pl.r];
+    const why = 'Beats his board slot by '+x.gap+' spots by the model\'s math.'
+      + (pl.sleeperNote ? ' ' + pl.sleeperNote : '');
+    html += boardRowHtml(pl, status).replace(
+      '<div class="note">'+pl.note+'</div>',
+      '<div class="note"><b>Why:</b> '+why+'</div>'
+    );
+  });
+  if(!pool.length) html += '<div class="footnote">No one currently clears the 24-spot bar. Try clearing the search, or check back — this recalculates as impact ratings change.</div>';
+  listEl.innerHTML = html;
+}
+
+function computeScarcity(){
+  // full-pool supply (fixed) vs remaining-undrafted supply, per category — positive contributions only
+  const full = [0,0,0,0,0,0,0,0,0];
+  const left = [0,0,0,0,0,0,0,0,0];
+  players.forEach(pl=>{
+    const c = contrib(pl);
+    const isGone = !!state.drafted[pl.r];
+    c.forEach((v,i)=>{
+      if(v>0){
+        full[i]+=v;
+        if(!isGone) left[i]+=v;
+      }
+    });
+  });
+  return CAT_NAMES.map((name,i)=>({name, pct: full[i]>0 ? (left[i]/full[i]*100) : 0}));
+}
+function scarcityHtml(){
+  const rows = computeScarcity();
+  return '<div class="scarcity">' + rows.map(r=>{
+    const pct = Math.max(0, Math.min(100, r.pct));
+    const color = pct>=66 ? 'var(--mine)' : (pct>=33 ? 'var(--accent)' : 'var(--neg)');
+    return '<div class="scrow"><div class="catlabel">'+r.name+'</div>'+
+      '<div class="sctrack"><div class="scfill" style="width:'+pct+'%;background:'+color+';"></div></div>'+
+      '<div class="scpct">'+Math.round(pct)+'%</div></div>';
+  }).join('') + '</div>'
+  + '<div class="fitnote" style="margin-top:0;">% of each category\'s total season-long production still sitting in undrafted players. Green = plenty left, red = nearly gone — a fast-reddening row is a category worth grabbing sooner.</div>';
+}
+function setHeatSort(key){
+  if(state.heatSortKey === key){
+    state.heatSortDir = state.heatSortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    state.heatSortKey = key;
+    state.heatSortDir = (key === 'rank') ? 'asc' : 'desc';
+  }
+  render();
+}
+function heatCellStyle(z){
+  const mag = Math.max(0, Math.min(1, Math.abs(z)/2.2));
+  const op = (0.12 + mag*0.75).toFixed(2);
+  const color = z>=0 ? 'var(--mine)' : 'var(--neg)';
+  return 'background:'+color+';opacity:'+op+';';
+}
+function renderHeatMap(q){
+  const listEl = document.getElementById('list');
+  let pool = players.filter(pl=>!state.drafted[pl.r]).filter(matchesPos)
+    .filter(pl=>!q || pl.n.toLowerCase().includes(q) || pl.t.toLowerCase().includes(q));
+  pool = pool.slice().sort((a,b)=>a.r-b.r).slice(0,75);
+
+  const key = state.heatSortKey, dir = state.heatSortDir;
+  pool.sort((a,b)=>{
+    let av, bv;
+    if(key==='rank'){ av=a.r; bv=b.r; }
+    else { const i = CAT_NAMES.indexOf(key); av=contrib(a)[i]; bv=contrib(b)[i]; }
+    return dir==='asc' ? (av-bv) : (bv-av);
+  });
+
+  let html = scarcityHtml();
+  html += '<div class="fitnote">Top 75 remaining players (by current board rank), colored by projected impact per category. Tap any column header to sort by it — tap again to flip direction.</div>';
+  html += '<div class="heatwrap"><table class="heattable"><thead><tr>';
+  html += '<th class="'+(key==='rank'?'active':'')+'" onclick="setHeatSort(\'rank\')">Rk'+(key==='rank'?(dir==='asc'?' ▲':' ▼'):'')+'</th>';
+  html += '<th style="text-align:left;">Player</th>';
+  CAT_NAMES.forEach(name=>{
+    html += '<th class="'+(key===name?'active':'')+'" onclick="setHeatSort(\''+name+'\')">'+name+(key===name?(dir==='asc'?' ▲':' ▼'):'')+'</th>';
+  });
+  html += '</tr></thead><tbody>';
+  pool.forEach(pl=>{
+    const c = contrib(pl);
+    html += '<tr><td class="rank">'+pl.r+'</td><td class="name">'+pl.n+' <span style="color:var(--muted);font-weight:400;">'+pl.t+'</span></td>';
+    c.forEach(v=>{ html += '<td style="'+heatCellStyle(v)+'">'+v.toFixed(1)+'</td>'; });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  if(!pool.length) html += '<div class="footnote">No players match. Try clearing the search.</div>';
+  listEl.innerHTML = html;
+}
+
+function render(){
+  VALUE_RANK_MAP = computeValueRanks();
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const listEl = document.getElementById('list');
+  document.getElementById('viewToggle').style.display = state.tab==='board' ? 'flex' : 'none';
+  if(state.tab==='fit'){ renderFit(q); return; }
+  if(state.tab==='sleepers'){ renderSleepers(q); return; }
+  if(state.tab==='heat'){ renderHeatMap(q); return; }
+  let html = '';
+  let lastRound = -1;
+  players.forEach(pl=>{
+    const status = state.drafted[pl.r];
+    if(state.view==='avail' && status) return;
+    if(!matchesPos(pl)) return;
+    if(q && !(pl.n.toLowerCase().includes(q) || pl.t.toLowerCase().includes(q))) return;
+    const roundNum = Math.ceil(pl.r/12);
+    if(roundNum !== lastRound){
+      lastRound = roundNum;
+      const lo = (roundNum-1)*12+1, hi = Math.min(roundNum*12, players.length);
+      html += '<div class="round-head">Round '+roundNum+' · ranks '+lo+'–'+hi+'</div>';
+    }
+    html += boardRowHtml(pl, status);
+  });
+  if(!html) html = '<div class="footnote">No players match. Try clearing the search or switching to "All".</div>';
+  listEl.innerHTML = html;
+}
+
+computeModel();
+loadState();           // instant render from local cache first
+renderPosFilter();
+renderLockUI();
+renderHeader();
+render();
+syncFromRemote();       // then reconcile with the shared database, if configured
+
+</script>
+</body>
+</html>
